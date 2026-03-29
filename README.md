@@ -111,11 +111,11 @@ python inference.py --seed 42
 
 ### Sample Baseline Scores (Seed=42)
 
-| Task | Baseline type | Score |
+| Task | Baseline type | Final grader score (0.0-1.0) |
 |---|---|---|
-| easy_small_clinic | greedy | 0.05 |
-| medium_busy_opd | greedy | -1.45 |
-| hard_mass_casualty | greedy | -5.35 |
+| easy_small_clinic | greedy | 0.20 |
+| medium_busy_opd | greedy | 0.40 |
+| hard_mass_casualty | greedy | 0.25 |
 
 ## Local Validation
 
