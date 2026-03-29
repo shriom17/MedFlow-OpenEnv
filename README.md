@@ -19,9 +19,9 @@ This environment simulates real-world hospital triage and resource allocation. A
 
 ## Space Usage
 
-Base URL (replace with your live Space URL):
+Base URL:
 
-- https://<your-space>.hf.space
+- https://shriom23-medflow-openenv.hf.space
 
 Useful endpoints:
 
@@ -34,14 +34,14 @@ Useful endpoints:
 
 Swagger UI:
 
-- https://<your-space>.hf.space/docs
+- https://shriom23-medflow-openenv.hf.space/docs
 
 ## Quick API Example (curl)
 
 Reset:
 
 ```bash
-curl -X POST "https://<your-space>.hf.space/reset" \
+curl -X POST "https://shriom23-medflow-openenv.hf.space/reset" \
 	-H "Content-Type: application/json" \
 	-d "{\"task_id\":\"easy_small_clinic\",\"seed\":42}"
 ```
@@ -49,7 +49,7 @@ curl -X POST "https://<your-space>.hf.space/reset" \
 Step:
 
 ```bash
-curl -X POST "https://<your-space>.hf.space/step" \
+curl -X POST "https://shriom23-medflow-openenv.hf.space/step" \
 	-H "Content-Type: application/json" \
 	-d "{\"action\":{\"action_type\":\"wait\"}}"
 ```
@@ -57,16 +57,16 @@ curl -X POST "https://<your-space>.hf.space/step" \
 Get state:
 
 ```bash
-curl "https://<your-space>.hf.space/state"
+curl "https://shriom23-medflow-openenv.hf.space/state"
 ```
 
 ## Postman Example
 
-1. Create request: POST https://<your-space>.hf.space/reset
+1. Create request: POST https://shriom23-medflow-openenv.hf.space/reset
 2. Body (JSON): {"task_id":"easy_small_clinic","seed":42}
-3. Create request: POST https://<your-space>.hf.space/step
+3. Create request: POST https://shriom23-medflow-openenv.hf.space/step
 4. Body (JSON): {"action":{"action_type":"assign","patient_id":1,"doctor_id":1}}
-5. Create request: GET https://<your-space>.hf.space/state
+5. Create request: GET https://shriom23-medflow-openenv.hf.space/state
 
 ## Tasks Supported
 
