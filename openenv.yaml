@@ -86,4 +86,4 @@ max_steps:
   medium_busy_opd: 40
   hard_mass_casualty: 60
 docker_port: 7860
-hf_space: "openenv/hospital-queue-env"
+hf_space: "shriom23/MedFlow-OpenEnv"
