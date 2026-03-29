@@ -108,16 +108,27 @@ def run_episode(client: OpenAI, model: str, task_id: str, seed: int, max_steps: 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Run OpenAI baseline on MedFlow tasks")
-    parser.add_argument("--model", default=os.getenv("OPENAI_MODEL", "gpt-4.1-mini"))
+    parser.add_argument(
+        "--model",
+        default=os.getenv("MODEL_NAME") or os.getenv("OPENAI_MODEL", "gpt-4.1-mini"),
+    )
+    parser.add_argument(
+        "--base-url",
+        default=os.getenv("API_BASE_URL", ""),
+        help="Optional model API base URL.",
+    )
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--tasks", nargs="+", default=TASK_IDS)
     args = parser.parse_args()
 
-    api_key = os.getenv("OPENAI_API_KEY")
+    api_key = os.getenv("HF_TOKEN") or os.getenv("OPENAI_API_KEY")
     if not api_key:
-        raise RuntimeError("OPENAI_API_KEY is required.")
+        raise RuntimeError("HF_TOKEN (or OPENAI_API_KEY) is required.")
 
-    client = OpenAI(api_key=api_key)
+    client_kwargs = {"api_key": api_key}
+    if args.base_url:
+        client_kwargs["base_url"] = args.base_url
+    client = OpenAI(**client_kwargs)
 
     results: List[Dict[str, Any]] = []
     for task_id in args.tasks:
