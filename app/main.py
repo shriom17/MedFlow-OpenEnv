@@ -1,4 +1,4 @@
-"""FastAPI app for the Hospital Queue Management Environment."""
+"""FastAPI app for the MedFlow-OpenEnv project."""
 
 from openenv.core.env_server.http_server import create_app
 

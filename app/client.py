@@ -1,4 +1,4 @@
-"""Hospital Queue Env client wrapper."""
+"""MedFlow-OpenEnv client wrapper."""
 
 from openenv.core.env_client import EnvClient
 

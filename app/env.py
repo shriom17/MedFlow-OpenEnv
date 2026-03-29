@@ -1,5 +1,5 @@
 """
-Hospital Queue Management — server-side Environment.
+MedFlow-OpenEnv — server-side Environment.
 
 Simulation clock
 ----------------
@@ -41,6 +41,7 @@ class HospitalQueueEnvironment(Environment):
         self._episode_id: str = ""
         self._step_count: int = 0
         self._sim_clock: int = 0          # minutes elapsed in simulation
+        self._current_task_id: str = "easy_small_clinic"
         self._task: Optional[TaskConfig] = None
 
         self._patients: Dict[int, Patient] = {}
@@ -210,10 +211,9 @@ class HospitalQueueEnvironment(Environment):
         self,
         seed: Optional[int] = None,
         episode_id: Optional[str] = None,
-        task_id: Optional[str] = None,
+        task_id: Optional[str] = "easy_small_clinic",
         **kwargs: Any,
     ) -> HospitalObservation:
-        import random
         self._episode_id = episode_id or str(uuid.uuid4())
         self._step_count = 0
         self._sim_clock = 0
@@ -227,11 +227,11 @@ class HospitalQueueEnvironment(Environment):
         self._beds_used = 0
 
         # pick task
-        rng = random.Random(seed)
-        if task_id and task_id in ALL_TASKS:
-            self._task = ALL_TASKS[task_id]
-        else:
-            self._task = rng.choice(list(ALL_TASKS.values()))
+        selected_task_id = task_id or "easy_small_clinic"
+        self._current_task_id = selected_task_id
+        self._task = ALL_TASKS.get(selected_task_id)
+        if self._task is None:
+            raise ValueError("Invalid task_id")
 
         # build patients
         self._patients = {}
@@ -274,6 +274,16 @@ class HospitalQueueEnvironment(Environment):
             return self._build_observation(
                 -0.1, True, "Episode already finished. Call reset().", self._final_score or 0.0
             )
+
+        # Restore task context if it was lost unexpectedly.
+        if self._task is None:
+            self._task = ALL_TASKS.get(self._current_task_id)
+            if self._task is None:
+                raise ValueError("Invalid task_id")
+
+        # If step() is called before reset(), initialize episode state from task.
+        if not self._patients and not self._pending_arrivals:
+            self.reset(task_id=self._task.task_id, episode_id=self._episode_id or None)
 
         self._step_count += 1
         self._advance_clock()

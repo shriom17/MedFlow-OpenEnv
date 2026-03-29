@@ -1,10 +1,16 @@
-"""Baseline greedy agent for Hospital Queue Management."""
+"""Baseline greedy agent for MedFlow-OpenEnv."""
+
+import argparse
 
 from app.models import HospitalAction
 from app.env import HospitalQueueEnvironment
 
 
-def run_baseline(env: HospitalQueueEnvironment) -> float:
+def run_baseline(
+    env: HospitalQueueEnvironment,
+    task_id: str = "easy_small_clinic",
+    seed: int = 42,
+) -> float:
     """
     Greedy baseline strategy:
     - Prioritize emergency patients (highest priority first)
@@ -14,7 +20,7 @@ def run_baseline(env: HospitalQueueEnvironment) -> float:
     
     Returns: total accumulated reward over the episode.
     """
-    obs = env.reset()
+    obs = env.reset(task_id=task_id, seed=seed)
     total_reward = 0.0
     
     while not obs.done:
@@ -59,3 +65,24 @@ def run_baseline(env: HospitalQueueEnvironment) -> float:
         total_reward += obs.reward
     
     return round(total_reward, 3)
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description="Run greedy baseline on MedFlow tasks.")
+    parser.add_argument(
+        "--tasks",
+        nargs="+",
+        default=["easy_small_clinic", "medium_busy_opd", "hard_mass_casualty"],
+        help="Task IDs to evaluate.",
+    )
+    parser.add_argument("--seed", type=int, default=42, help="Reset seed for reproducibility.")
+    args = parser.parse_args()
+
+    env = HospitalQueueEnvironment()
+    for task_id in args.tasks:
+        score = run_baseline(env, task_id=task_id, seed=args.seed)
+        print(f"{task_id}: total_reward={score}")
+
+
+if __name__ == "__main__":
+    main()

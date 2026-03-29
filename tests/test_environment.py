@@ -7,7 +7,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import pytest
 from app.models import HospitalAction, HospitalObservation, HospitalState
-from server.hospital_environment import HospitalQueueEnvironment
+from app.env import HospitalQueueEnvironment
 
 
 @pytest.fixture

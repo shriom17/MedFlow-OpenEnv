@@ -1,6 +1,6 @@
 # Data models
 """
-Hospital Queue Management — OpenEnv typed models.
+MedFlow-OpenEnv — OpenEnv typed models.
 
 Action  : what the agent decides each step
 Observation : what the agent sees after each decision

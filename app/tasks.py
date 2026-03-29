@@ -1,5 +1,5 @@
 """
-Task catalogue for Hospital Queue Management Environment.
+Task catalogue for MedFlow-OpenEnv.
 
 Task 1 (easy)   — Small clinic, 5 patients, 2 doctors, minimize wait time
 Task 2 (medium) — Busy OPD, mixed priorities, resource constraints
