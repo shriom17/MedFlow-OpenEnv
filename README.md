@@ -13,7 +13,7 @@ short_description: Agentic Patient Prioritization System for AI agents
 # Agentic Patient Prioritization System (OpenEnv)
 
 
-![Demo Screenshot](demo.png)
+![Demo Screenshot](Screenshot 2026-03-24 163350.png)
 
 > **Note:** The system is built to support LLM Agents via OpenAI/HuggingFace API. Currently, the local Greedy Baseline is provided for immediate demonstration and performance benchmarking
 
