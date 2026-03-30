@@ -12,7 +12,10 @@ short_description: Agentic Patient Prioritization System for AI agents
 
 # Agentic Patient Prioritization System (OpenEnv)
 
-> **Note:** The code expects an `OPENAI_API_KEY` or `HF_TOKEN` as an environment variable to run the LLM-based agent. No API key is included in this repository.
+
+![Demo Screenshot](demo.png)
+
+> **Note:** The system is built to support LLM Agents via OpenAI/HuggingFace API. Currently, the local Greedy Baseline is provided for immediate demonstration and performance benchmarking
 
 MedFlow-OpenEnv is not just a "queue management" simulator—it's an **Agentic Patient Prioritization System**. Here, your AI agent must make intelligent, context-aware decisions, going beyond FIFO logic to demonstrate true medical triage intelligence. This is designed for next-gen agentic AI research, where decision quality and reasoning matter most.
 

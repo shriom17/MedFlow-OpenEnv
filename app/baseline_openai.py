@@ -15,7 +15,7 @@ from openai import OpenAI
 
 from app.env import HospitalQueueEnvironment
 from app.models import HospitalAction, HospitalObservation
-
+from dotenv import load_dotenv; load_dotenv()
 TASK_IDS = ["easy_small_clinic", "medium_busy_opd", "hard_mass_casualty"]
 
 
