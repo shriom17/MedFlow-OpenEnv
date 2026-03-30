@@ -9,72 +9,97 @@ license: mit
 short_description: Agentic Patient Prioritization System for AI agents
 ---
 
-
 # Agentic Patient Prioritization System (OpenEnv)
 
 ![Demo Screenshot](Demo.png)
 
+> **Note:** The system is built to support LLM Agents via OpenAI/HuggingFace APIs.  
+> A local Greedy Baseline is provided for quick demonstration and benchmarking.
 
-> **Note:** The system is built to support LLM Agents via OpenAI/HuggingFace API. Currently, the local Greedy Baseline is provided for immediate demonstration and performance benchmarking
+MedFlow-OpenEnv is not just a "queue management" simulator — it's an **Agentic Patient Prioritization System** built on top of OpenEnv.  
+Here, AI agents must make intelligent, context-aware decisions, going beyond FIFO logic to demonstrate real-world triage intelligence.
 
-MedFlow-OpenEnv is not just a "queue management" simulator—it's an **Agentic Patient Prioritization System**. Here, your AI agent must make intelligent, context-aware decisions, going beyond FIFO logic to demonstrate true medical triage intelligence. This is designed for next-gen agentic AI research, where decision quality and reasoning matter most.
+---
 
 ## 1. Project Overview & Agentic Vision
 
 **Why "Agentic"?**
-Meta and modern AI research demand agents that can reason, prioritize, and adapt—not just process queues. This environment challenges your agent to:
-- Recognize patient severity and urgency
-- Allocate resources smartly (doctors, beds)
-- Minimize critical wait times
-- Justify its actions with context
 
-Your agent is evaluated on its ability to "think" like a real triage expert, not just follow rules.
+Modern AI systems are moving toward **agentic decision-making**, where models must reason, adapt, and prioritize dynamically.  
 
-## 2. Environment Logic (The 'Core')
+This environment challenges your agent to:
 
-**Observation Space:**
-- Patient severity, priority, and wait time
-- Available doctors (specialization, busy/free)
-- Bed availability
-- Current simulation time
+- Recognize patient severity and urgency  
+- Allocate resources intelligently (doctors, beds)  
+- Minimize critical wait times  
+- Make context-aware decisions under constraints  
 
-**Action Space:**
-- Assign patient to specific doctor
-- Move patient to top of queue (prioritize)
-- Discharge patient (free up bed)
-- Wait (no action)
+Your agent is evaluated on its ability to **think like a real triage expert**, not just follow rules.
 
-**Reward Function (Conceptual):**
-- **+0.15**: Emergency patient assigned within 5 min
-- **+0.10**: Urgent patient assigned within 10 min
-- **+0.05**: Normal patient assigned
-- **-0.10**: Wrong specialization assigned
-- **-0.15**: Emergency patient left waiting >5 min (per step)
-- **-0.05**: Bed overflow attempted
-- **0.0**: Wait action
-- **Final**: Grader score based on overall episode stats (avg wait, deaths, etc)
+---
 
-## 3. LLM-Based Decision Making vs. Greedy Baseline
+## 2. Environment Logic (The Core)
 
-**Greedy Baseline (The Old Way):**
-- Simple FIFO বা specialization-matching logic
-- No deep reasoning—just "first come, first served" বা basic rules
+### Observation Space
+- Patient severity, priority, and wait time  
+- Available doctors (specialization, busy/free)  
+- Bed availability  
+- Current simulation time  
 
-**LLM Agent (Your Way):**
-- Uses prompt engineering and LLM (GPT-3.5/4/4o) to interpret patient context
-- Can "sense" which patient is most critical, even if not first in line
-- Demonstrates "Vibe Coding" intelligence—reasoning beyond hardcoded rules
+### Action Space
+- Assign patient to a doctor  
+- Move patient to top of queue (prioritize)  
+- Discharge patient (free up resources)  
+- Wait (no action — may be strategic)  
 
-**No RL (Reinforcement Learning) yet:**
-- This project currently does **not** use RL. All agentic behavior is via LLM or greedy logic.
+---
 
-## 4. Tech Stack & Tooling
+## 3. Reward Function (Conceptual)
 
-- **Framework:** Meta PyTorch OpenEnv
-- **Brain:** OpenAI Models (GPT-3.5, GPT-4, GPT-4o)
-- **Automation:** Built with AI Agents (e.g., Copilot, Cursor, Claude)
+- **+0.15** → Emergency patient assigned within 5 min  
+- **+0.10** → Urgent patient handled efficiently  
+- **+0.05** → Normal patient treated  
+- **-0.10** → Wrong specialization  
+- **-0.15** → Emergency delay penalty  
+- **-0.05** → Bed overflow attempt  
+- **0.0** → Wait  
 
-## 5. How to Run (Crucial for Selection)
+**Final Score:**
+- Average wait time  
+- Emergency response time  
+- Throughput  
+- Critical failures  
+
+---
+
+## 4. LLM-Based Decision Making vs Greedy Baseline
+
+### Greedy Baseline (Traditional)
+- FIFO / simple rules  
+- No reasoning  
+- Limited performance  
+
+### LLM Agent (Agentic Approach)
+- Uses GPT-style reasoning  
+- Understands patient context  
+- Makes smarter prioritization decisions  
+- Demonstrates true **agent intelligence**  
+
+> No Reinforcement Learning yet — purely reasoning-based agents.
+
+---
+
+## 5. Tech Stack & Tooling
+
+- **Framework:** OpenEnv  
+- **Backend:** FastAPI  
+- **Core Logic:** Python  
+- **Agent Layer:** OpenAI / HuggingFace APIs  
+- **Testing:** Pytest (40+ test cases)  
+
+---
+
+## 6. How to Run
 
 1. **Install dependencies:**
    ```bash
@@ -102,7 +127,7 @@ Your agent is evaluated on its ability to "think" like a real triage expert, not
 ---
 
 
-## 6. Agentic Flow Diagram
+## 7. Agentic Flow Diagram
 
 ```mermaid
 graph TD
