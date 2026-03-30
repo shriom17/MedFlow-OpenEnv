@@ -142,4 +142,3 @@ graph TD
 ```
 
 **Built for agentic AI research.**
-For questions, see the code or open an issue!
