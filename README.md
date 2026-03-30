@@ -1,132 +1,117 @@
 ---
 title: MedFlow OpenEnv
-emoji: 📈
+emoji: 🤖
 colorFrom: green
 colorTo: blue
 sdk: docker
 pinned: false
 license: mit
-short_description: Hospital queue management simulation API for AI agents
+short_description: Agentic Patient Prioritization System for AI agents
 ---
 
-# Hospital Queue Management Environment (OpenEnv)
 
-Hospital Queue Management Environment for AI agents using the OpenEnv specification.
+# Agentic Patient Prioritization System (OpenEnv)
 
-## Purpose
+> **Note:** The code expects an `OPENAI_API_KEY` or `HF_TOKEN` as an environment variable to run the LLM-based agent. No API key is included in this repository.
 
-This environment simulates real-world hospital triage and resource allocation. Agents must balance urgency, doctor availability, specialization matching, and bed constraints.
+MedFlow-OpenEnv is not just a "queue management" simulator—it's an **Agentic Patient Prioritization System**. Here, your AI agent must make intelligent, context-aware decisions, going beyond FIFO logic to demonstrate true medical triage intelligence. This is designed for next-gen agentic AI research, where decision quality and reasoning matter most.
 
-## Space Usage
+## 1. Project Overview & Agentic Vision
 
-Base URL:
+**Why "Agentic"?**
+Meta and modern AI research demand agents that can reason, prioritize, and adapt—not just process queues. This environment challenges your agent to:
+- Recognize patient severity and urgency
+- Allocate resources smartly (doctors, beds)
+- Minimize critical wait times
+- Justify its actions with context
 
-- https://shriom23-medflow-openenv.hf.space
+Your agent is evaluated on its ability to "think" like a real triage expert, not just follow rules.
 
-Useful endpoints:
+## 2. Environment Logic (The 'Core')
 
-- GET /health
-- GET /docs
-- GET /schema
-- POST /reset
-- POST /step
-- GET /state
+**Observation Space:**
+- Patient severity, priority, and wait time
+- Available doctors (specialization, busy/free)
+- Bed availability
+- Current simulation time
 
-Swagger UI:
+**Action Space:**
+- Assign patient to specific doctor
+- Move patient to top of queue (prioritize)
+- Discharge patient (free up bed)
+- Wait (no action)
 
-- https://shriom23-medflow-openenv.hf.space/docs
+**Reward Function (Conceptual):**
+- **+0.15**: Emergency patient assigned within 5 min
+- **+0.10**: Urgent patient assigned within 10 min
+- **+0.05**: Normal patient assigned
+- **-0.10**: Wrong specialization assigned
+- **-0.15**: Emergency patient left waiting >5 min (per step)
+- **-0.05**: Bed overflow attempted
+- **0.0**: Wait action
+- **Final**: Grader score based on overall episode stats (avg wait, deaths, etc)
 
-## Quick API Example (curl)
+## 3. LLM-Based Decision Making vs. Greedy Baseline
 
-Reset:
+**Greedy Baseline (The Old Way):**
+- Simple FIFO বা specialization-matching logic
+- No deep reasoning—just "first come, first served" বা basic rules
 
-```bash
-curl -X POST "https://shriom23-medflow-openenv.hf.space/reset" \
-	-H "Content-Type: application/json" \
-	-d "{\"task_id\":\"easy_small_clinic\",\"seed\":42}"
+**LLM Agent (Your Way):**
+- Uses prompt engineering and LLM (GPT-3.5/4/4o) to interpret patient context
+- Can "sense" which patient is most critical, even if not first in line
+- Demonstrates "Vibe Coding" intelligence—reasoning beyond hardcoded rules
+
+**No RL (Reinforcement Learning) yet:**
+- This project currently does **not** use RL. All agentic behavior is via LLM or greedy logic.
+
+## 4. Tech Stack & Tooling
+
+- **Framework:** Meta PyTorch OpenEnv
+- **Brain:** OpenAI Models (GPT-3.5, GPT-4, GPT-4o)
+- **Automation:** Built with AI Agents (e.g., Copilot, Cursor, Claude)
+
+## 5. How to Run (Crucial for Selection)
+
+1. **Install dependencies:**
+   ```bash
+   pip install -r requirements.txt
+   ```
+2. **Set your API key:**
+   - Create a `.env` file in the project root:
+     ```env
+     OPENAI_API_KEY=your_openai_api_key_here
+     ```
+3. **Run a simulation:**
+   - Greedy baseline:
+     ```bash
+     python -m app.baseline --seed 42
+     ```
+   - LLM agent (OpenAI):
+     ```bash
+     python -m app.baseline_openai --seed 42
+     ```
+   - Custom inference (submission):
+     ```bash
+     python inference.py --seed 42
+     ```
+
+---
+
+
+## 6. Agentic Flow Diagram
+
+```mermaid
+graph TD
+  A[Patient Entry] -->|Symptoms & Severity| B(Data Pre-processor)
+  B --> C{LLM Agent - Brain}
+  C -->|Reasoning| D[Priority Calculation]
+  C -->|Comparison| E[Greedy Baseline]
+  D --> F[MedFlow-OpenEnv Queue]
+  F --> G[Doctor Assignment]
+  E -.->|Performance Gap| G
+  style C fill:#f9f,stroke:#333,stroke-width:4px
 ```
 
-Step:
-
-```bash
-curl -X POST "https://shriom23-medflow-openenv.hf.space/step" \
-	-H "Content-Type: application/json" \
-	-d "{\"action\":{\"action_type\":\"wait\"}}"
-```
-
-Get state:
-
-```bash
-curl "https://shriom23-medflow-openenv.hf.space/state"
-```
-
-## Postman Example
-
-1. Create request: POST https://shriom23-medflow-openenv.hf.space/reset
-2. Body (JSON): {"task_id":"easy_small_clinic","seed":42}
-3. Create request: POST https://shriom23-medflow-openenv.hf.space/step
-4. Body (JSON): {"action":{"action_type":"assign","patient_id":1,"doctor_id":1}}
-5. Create request: GET https://shriom23-medflow-openenv.hf.space/state
-
-## Tasks Supported
-
-- Easy: small clinic (`easy_small_clinic`)
-- Medium: busy OPD (`medium_busy_opd`)
-- Hard: mass casualty (`hard_mass_casualty`)
-
-## Reward and Grader (High-Level)
-
-Step reward is shaped for partial progress:
-
-- Positive for timely assignment/discharge and emergency handling
-- Negative for invalid actions, specialization mismatch, and neglected emergencies
-
-At episode end, each task uses a deterministic grader that returns a normalized score in [0.0, 1.0].
-
-## Baseline Testing
-
-Greedy baseline (local deterministic policy):
-
-```bash
-python -m app.baseline --seed 42
-```
-
-OpenAI baseline (if API key is configured):
-
-```bash
-export OPENAI_API_KEY=<your_key>
-python -m app.baseline_openai --seed 42
-```
-
-Submission inference entrypoint (required file name):
-
-```bash
-export API_BASE_URL=<your_model_api_base>
-export MODEL_NAME=<your_model_name>
-export HF_TOKEN=<your_api_token>
-python inference.py --seed 42
-```
-
-`inference.py` uses the OpenAI client internally and reads the required submission variables.
-
-### Sample Baseline Scores (Seed=42)
-
-| Task | Baseline type | Final grader score (0.0-1.0) |
-|---|---|---|
-| easy_small_clinic | greedy | 0.20 |
-| medium_busy_opd | greedy | 0.40 |
-| hard_mass_casualty | greedy | 0.25 |
-
-## Local Validation
-
-Run tests:
-
-```bash
-pytest -q
-```
-
-Run OpenEnv validator:
-
-```bash
-openenv validate .
-```
+**Built for agentic AI research.**
+For questions, see the code or open an issue!

@@ -110,7 +110,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Run OpenAI baseline on MedFlow tasks")
     parser.add_argument(
         "--model",
-        default=os.getenv("MODEL_NAME") or os.getenv("OPENAI_MODEL", "gpt-4.1-mini"),
+        default=os.getenv("MODEL_NAME") or os.getenv("OPENAI_MODEL", "gpt-4o-mini"),
     )
     parser.add_argument(
         "--base-url",
