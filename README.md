@@ -1,4 +1,5 @@
 ---
+
 title: MedFlow OpenEnv
 emoji: 🤖
 colorFrom: green
@@ -9,136 +10,201 @@ license: mit
 short_description: Agentic Patient Prioritization System for AI agents
 ---
 
-# Agentic Patient Prioritization System (OpenEnv)
+# 🏥 Agentic Patient Prioritization System (OpenEnv)
 
-![Demo Screenshot](Demo.png)
 
-> **Note:** The system is built to support LLM Agents via OpenAI/HuggingFace APIs.  
-> A local Greedy Baseline is provided for quick demonstration and benchmarking.
+> **Note:** The system supports LLM-based agents via OpenAI/HuggingFace APIs and now includes a Reinforcement Learning (RL) agent for adaptive decision-making.
+> A Greedy Baseline is provided for benchmarking.
 
-MedFlow-OpenEnv is not just a "queue management" simulator — it's an **Agentic Patient Prioritization System** built on top of OpenEnv.  
-Here, AI agents must make intelligent, context-aware decisions, going beyond FIFO logic to demonstrate real-world triage intelligence.
+---
+
+## 🚀 Introduction
+
+**MedFlow-OpenEnv** is an advanced simulation environment for **intelligent patient triage and resource allocation** under real-world constraints.
+
+Unlike traditional queue systems, MedFlow enables **agentic AI systems** to reason, adapt, and learn in dynamic healthcare scenarios.
+
+The system integrates multiple AI paradigms:
+
+* ⚙️ **Greedy Baseline** → fast but rule-based
+* 🧠 **LLM Agent** → context-aware reasoning
+* 🤖 **RL Agent** → reward-driven learning and adaptation
+
+> 💡 This progression demonstrates the evolution from **static rules → reasoning → learning-based intelligence**.
 
 ---
 
 ## 1. Project Overview & Agentic Vision
 
-**Why "Agentic"?**
+Modern AI is shifting toward **agentic systems** that can think, adapt, and optimize decisions dynamically.
 
-Modern AI systems are moving toward **agentic decision-making**, where models must reason, adapt, and prioritize dynamically.  
+MedFlow challenges agents to:
 
-This environment challenges your agent to:
+* Recognize patient severity and urgency
+* Allocate resources intelligently (doctors, beds)
+* Minimize critical wait times
+* Operate under real-world constraints
 
-- Recognize patient severity and urgency  
-- Allocate resources intelligently (doctors, beds)  
-- Minimize critical wait times  
-- Make context-aware decisions under constraints  
-
-Your agent is evaluated on its ability to **think like a real triage expert**, not just follow rules.
-
----
-
-## 2. Environment Logic (The Core)
-
-### Observation Space
-- Patient severity, priority, and wait time  
-- Available doctors (specialization, busy/free)  
-- Bed availability  
-- Current simulation time  
-
-### Action Space
-- Assign patient to a doctor  
-- Move patient to top of queue (prioritize)  
-- Discharge patient (free up resources)  
-- Wait (no action — may be strategic)  
+👉 The goal:
+**Build agents that behave like real triage experts, not rule-followers.**
 
 ---
 
-## 3. Reward Function (Conceptual)
+## 2. Environment Logic (Core RL-Compatible Design)
 
-- **+0.15** → Emergency patient assigned within 5 min  
-- **+0.10** → Urgent patient handled efficiently  
-- **+0.05** → Normal patient treated  
-- **-0.10** → Wrong specialization  
-- **-0.15** → Emergency delay penalty  
-- **-0.05** → Bed overflow attempt  
-- **0.0** → Wait  
+### 🔹 Observation Space (State)
 
-**Final Score:**
-- Average wait time  
-- Emergency response time  
-- Throughput  
-- Critical failures  
+* Patient severity, priority, wait time
+* Available doctors (specialization, status)
+* Bed availability
+* Current simulation time
 
 ---
 
-## 4. LLM-Based Decision Making vs Greedy Baseline
+### 🔹 Action Space
 
-### Greedy Baseline (Traditional)
-- FIFO / simple rules  
-- No reasoning  
-- Limited performance  
+* Assign patient to doctor
+* Prioritize patient in queue
+* Discharge patient
+* Wait (strategic no-op)
 
-### LLM Agent (Agentic Approach)
-- Uses GPT-style reasoning    
-- Understands patient context  
-- Makes smarter prioritization decisions  
-- Demonstrates true **agent intelligence**  
+---
 
-> No Reinforcement Learning yet — purely reasoning-based agents.
+### 🔹 Reward Function
+
+* **+0.15** → Emergency handled quickly
+* **+0.10** → Efficient urgent handling
+* **+0.05** → Normal treatment
+* **-0.10** → Wrong specialization
+* **-0.15** → Emergency delay
+* **-0.05** → Resource overflow
+* **0.0** → Wait
+
+👉 This reward structure enables **Reinforcement Learning optimization**.
+
+---
+
+## 3. Decision-Making Paradigms
+
+### 🔹 Greedy Baseline
+
+* FIFO / rule-based
+* No reasoning
+* Limited adaptability
+
+### Greedy Output
+![Greedy Baseline](Greedy.png)
+---
+
+### 🔹 LLM Agent (Agentic Reasoning)
+
+* Uses GPT-style reasoning
+* Context-aware decision-making
+* Flexible and intelligent
+
+### LLM Output
+![LLM Agent](LLM.png)
+---
+
+### 🔹 RL Agent (Learning-Based)
+
+* Implemented in `rl_agent.py`
+* Uses **state → action → reward loop**
+* Learns optimal policies via feedback
+* Adapts to complex scenarios over time
+
+### RL Output
+![RL Agent](RL-agent.png)
+---
+
+### 📊 RL Evaluation Snapshot
+
+```
+[Task: easy_small_clinic] → Reward: 0.35  
+[Task: medium_busy_opd] → Reward: 0.7  
+[Task: hard_mass_casualty] → Reward: -2.35  
+⚠️ Needs improvement  
+```
+
+> Lower performance in high-complexity scenarios highlights opportunities for further learning and optimization.
+
+---
+
+## 4. System Architecture
+
+```mermaid
+graph TD
+  A[Patient Data] --> B[Environment Simulation]
+  B --> C{Decision Engine}
+  C --> D[Greedy Baseline]
+  C --> E[LLM Agent]
+  C --> F[RL Agent]
+  F --> G[Action Execution]
+  G --> H[Outcome Evaluation]
+  H --> I[Reward Signal]
+  I --> F
+```
+
+👉 Modular design enables **plug-and-play intelligence layers**.
 
 ---
 
 ## 5. Tech Stack & Tooling
 
-- **Framework:** OpenEnv  
-- **Backend:** FastAPI  
-- **Core Logic:** Python  
-- **Agent Layer:** OpenAI / HuggingFace APIs  
-- **Testing:** Pytest (40+ test cases)  
+* **Framework:** OpenEnv
+* **Backend:** FastAPI
+* **Core Logic:** Python
+* **Agents:** OpenAI / HuggingFace APIs + RL Agent
+* **Testing:** Pytest (40+ test cases)
 
 ---
 
 ## 6. How to Run
 
-1. **Install dependencies:**
-   ```bash
-   pip install -r requirements.txt
-   ```
-2. **Set your API key:**
-   - Create a `.env` file in the project root:
-     ```env
-     OPENAI_API_KEY=your_openai_api_key_here
-     ```
-3. **Run a simulation:**
-   - Greedy baseline:
-     ```bash
-     python -m app.baseline --seed 42
-     ```
-   - LLM agent (OpenAI):
-     ```bash
-     python -m app.baseline_openai --seed 42
-     ```
-   - Custom inference (submission):
-     ```bash
-     python inference.py --seed 42
-     ```
+```bash
+pip install -r requirements.txt
+```
+
+Create `.env`:
+
+```env
+OPENAI_API_KEY=your_key_here
+```
+
+### Run simulations:
+
+**Greedy baseline**
+
+```bash
+python -m app.baseline --seed 42
+```
+
+**LLM agent**
+
+```bash
+python -m app.baseline_openai --seed 42
+```
+
+**RL agent**
+
+```bash
+python -m app.rl_agent --tasks easy_small_clinic medium_busy_opd hard_mass_casualty --seed 42
+```
 
 ---
 
+## 🎯 Design Philosophy
 
-## 7. Agentic Flow Diagram
+> Build once → plug multiple intelligence layers → compare reasoning vs learning vs rules.
 
-```mermaid
-graph TD
-  A[Patient Entry] -->|Symptoms & Severity| B(Data Pre-processor)
-  B --> C{LLM Agent - Brain}
-  C -->|Reasoning| D[Priority Calculation]
-  C -->|Comparison| E[Greedy Baseline]
-  D --> F[MedFlow-OpenEnv Queue]
-  F --> G[Doctor Assignment]
-  E -.->|Performance Gap| G
-  style C fill:#f9f,stroke:#333,stroke-width:4px
-```
+---
 
-**Built for agentic AI research.**
+## 🔮 Future Scope
+
+* Replace dummy RL with Q-learning / Deep RL
+* Hybrid LLM + RL agent
+* Real-world hospital dataset integration
+
+---
+
+**Built for next-generation agentic AI systems 🚀**

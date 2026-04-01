@@ -37,3 +37,10 @@ env/
 outputs/
 .env
 *.log
+
+# Local screenshots (keep out of git to avoid HF binary push rejection)
+Demo.png
+Greedy.png
+LLM.png
+RL-agent.png
+
