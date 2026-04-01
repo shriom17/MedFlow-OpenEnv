@@ -80,7 +80,7 @@ Your agent is evaluated on its ability to **think like a real triage expert**, n
 - Limited performance  
 
 ### LLM Agent (Agentic Approach)
-- Uses GPT-style reasoning  
+- Uses GPT-style reasoning    
 - Understands patient context  
 - Makes smarter prioritization decisions  
 - Demonstrates true **agent intelligence**  
