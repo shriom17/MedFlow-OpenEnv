@@ -1,0 +1,34 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "medflow-openenv"
+version = "1.0.0"
+description = "MedFlow-OpenEnv: hospital triage and resource allocation environment built on OpenEnv."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [
+  { name = "OpenEnv Hackathon Submission" }
+]
+dependencies = [
+  "openenv-core==0.2.1",
+  "fastapi==0.104.1",
+  "uvicorn[standard]==0.24.0",
+  "pydantic==2.12.5",
+  "websockets==15.0.1",
+  "openai==2.30.0",
+  "matplotlib==3.10.8"
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=7.0.0"
+]
+
+[project.scripts]
+server = "server.app:main"
+
+[tool.setuptools]
+packages = ["app", "server"]

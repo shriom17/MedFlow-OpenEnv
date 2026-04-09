@@ -1,0 +1,89 @@
+name: MedFlow-OpenEnv
+version: "1.0.0"
+description: >
+  MedFlow-OpenEnv — an OpenEnv environment where AI agents
+  learn to triage patients, assign doctors, and minimize wait times
+  across three difficulty levels: small clinic → busy OPD → mass casualty.
+
+author: "OpenEnv Hackathon Submission"
+tags:
+  - openenv
+  - healthcare
+  - triage
+  - scheduling
+  - real-world
+  - resource-allocation
+
+tasks:
+  - id: easy_small_clinic
+    difficulty: easy
+    description: "5 patients, 2 general doctors, 4 beds. Minimize wait, treat emergencies first."
+  - id: medium_busy_opd
+    difficulty: medium
+    description: "10+3 patients, 4 specialist doctors, dynamic arrivals, specialization routing."
+  - id: hard_mass_casualty
+    difficulty: hard
+    description: "18 patients in waves, 5 doctors, critical death penalty for severity≥9 wait>15min."
+
+action_space:
+  type: HospitalAction
+  fields:
+    action_type:
+      type: string
+      enum: [assign, prioritize, discharge, wait]
+    patient_id:
+      type: integer
+      description: "Target patient ID (required for assign/prioritize/discharge)."
+    doctor_id:
+      type: integer
+      description: "Target doctor ID (required for assign)."
+
+observation_space:
+  type: HospitalObservation
+  fields:
+    waiting_patients:
+      type: array
+      description: "Sorted by priority then arrival time. Each: {id, name, age, priority, condition, wait_minutes, severity_score, required_specialization}"
+    doctors:
+      type: array
+      description: "Each: {id, name, specialization, busy, current_patient_id, patients_seen, free_in_minutes}"
+    beds_available:
+      type: integer
+    current_time_minutes:
+      type: integer
+    step_feedback:
+      type: string
+    queue_length:
+      type: integer
+    avg_wait_minutes:
+      type: number
+    critical_untreated:
+      type: integer
+    task_id:
+      type: string
+    task_description:
+      type: string
+    progress_score:
+      type: number
+    done:
+      type: boolean
+    reward:
+      type: number
+
+reward:
+  range: [-0.15, 0.15]
+  per_step: true
+  final: "grader(episode_stats) → 0.0–1.0 on episode end"
+  description: >
+    Shaped step rewards: +0.15 emergency assigned ≤5 min, +0.10 urgent ≤10 min,
+    +0.05 normal assigned, +0.05 discharge, -0.10 specialization mismatch,
+    -0.15/step emergency waiting >5 min, -0.05 bed overflow.
+    Final score from task grader on episode completion.
+
+sim_minutes_per_step: 2
+max_steps:
+  easy_small_clinic: 20
+  medium_busy_opd: 40
+  hard_mass_casualty: 60
+docker_port: 7860
+hf_space: "shriom23/MedFlow-OpenEnv"

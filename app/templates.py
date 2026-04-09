@@ -1,0 +1,641 @@
+"""
+Dashboard HTML template for MedFlow Hospital Triage UI.
+Embedded as string to avoid file path resolution issues in cloud deployments.
+"""
+
+DASHBOARD_HTML = """<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MedFlow OpenEnv - Hospital Triage</title>
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #3b82f6;
+            --primary-dark: #1e40af;
+            --accent: #f59e0b;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f97316;
+            --bg-dark: #0f172a;
+            --bg-darker: #020617;
+            --card-bg: #1e293b;
+            --card-border: #334155;
+            --text-primary: #f1f5f9;
+            --text-secondary: #cbd5e1;
+            --text-muted: #94a3b8;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, var(--primary-dark) 0%, var(--bg-dark) 100%);
+            color: var(--text-primary);
+            min-height: 100vh;
+        }
+
+        .navbar {
+            background: rgba(6, 7, 25, 0.8);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--card-border);
+            padding: 16px 20px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .navbar-brand {
+            display: flex;
+            align-items: baseline;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .navbar h1 {
+            font-family: 'Sora', sans-serif;
+            font-size: 20px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #3b82f6, #f59e0b);
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .navbar-subtitle {
+            font-size: 12px;
+            font-weight: 600;
+            letter-spacing: 0.4px;
+            text-transform: uppercase;
+            color: var(--text-secondary);
+            opacity: 0.9;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 24px;
+        }
+
+        .card {
+            background: rgba(7, 13, 23, 0.6);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            padding: 24px;
+            transition: all 0.3s ease;
+            animation: fadeIn 0.5s ease-out;
+            margin-bottom: 20px;
+        }
+
+        .card:hover {
+            border-color: var(--primary);
+            box-shadow: 0 0 20px rgba(59, 130, 246, 0.1);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .card h2 {
+            font-family: 'Sora', sans-serif;
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: var(--text-primary);
+        }
+
+        .task-buttons {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 16px;
+        }
+
+        button {
+            padding: 10px 16px;
+            border-radius: 10px;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.2s ease;
+            font-family: 'Inter', sans-serif;
+        }
+
+        button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+        }
+
+        .btn-secondary {
+            background: rgba(59, 130, 246, 0.2);
+            color: var(--accent);
+            border: 1px solid var(--primary);
+        }
+
+        .btn-ghost {
+            background: transparent;
+            color: var(--text-secondary);
+            border: 1px solid var(--card-border);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        label {
+            display: block;
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        select, input {
+            width: 100%;
+            padding: 10px 12px;
+            background: rgba(15, 23, 42, 0.5);
+            border: 1px solid var(--card-border);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-family: 'Inter', sans-serif;
+            font-size: 14px;
+            transition: all 0.2s ease;
+        }
+
+        select:focus, input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 12px rgba(59, 130, 246, 0.3);
+        }
+
+        select option {
+            background-color: #0b1220;
+            color: var(--text-primary);
+        }
+
+        select option:checked {
+            background-color: #1d4ed8;
+            color: #ffffff;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .stat-box {
+            background: rgba(59, 130, 246, 0.1);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            border-radius: 12px;
+            padding: 16px;
+            text-align: center;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+            font-weight: 600;
+        }
+
+        .stat-value {
+            font-family: 'Sora', sans-serif;
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--accent);
+        }
+
+        .status-box {
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            border-radius: 12px;
+            padding: 12px;
+            margin-top: 16px;
+            font-size: 14px;
+            color: #86efac;
+        }
+
+        .status-box.error {
+            background: rgba(239, 68, 68, 0.1);
+            border-color: rgba(239, 68, 68, 0.3);
+            color: #fca5a5;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 16px;
+            font-size: 14px;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--card-border);
+        }
+
+        th {
+            color: var(--text-muted);
+            font-weight: 600;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        td {
+            color: var(--text-secondary);
+        }
+
+        .tag {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .tag-emergency { background: rgba(239, 68, 68, 0.2); color: #fca5a5; }
+        .tag-urgent { background: rgba(245, 158, 11, 0.2); color: #fcd34d; }
+        .tag-normal { background: rgba(16, 185, 129, 0.2); color: #86efac; }
+        .tag-busy { background: rgba(239, 68, 68, 0.2); color: #fca5a5; }
+        .tag-free { background: rgba(16, 185, 129, 0.2); color: #86efac; }
+
+        .ai-button {
+            background: linear-gradient(135deg, var(--accent), #f97316);
+            color: white;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border: 2px solid var(--card-border);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .flex {
+            display: flex;
+        }
+
+        .gap-12 { gap: 12px; }
+    </style>
+</head>
+<body>
+
+<div class="navbar">
+    <div class="navbar-brand">
+        <h1>🏥 MedFlow</h1>
+        <span class="navbar-subtitle">AI-powered Hospital triage system</span>
+    </div>
+</div>
+
+<div class="container">
+    <!-- TASK SELECTION -->
+    <div class="card">
+        <h2>1. Start Task</h2>
+        <div class="task-buttons">
+            <button class="btn-secondary" onclick="startTask('easy_small_clinic')" style="color: var(--success)">⭐ Easy Clinic</button>
+            <button class="btn-secondary" onclick="startTask('medium_busy_opd')" style="color: var(--accent)">⚡ Medium OPD</button>
+            <button class="btn-secondary" onclick="startTask('hard_mass_casualty')" style="color: var(--danger)">🚨 Hard Casualty</button>
+        </div>
+        <div id="status" class="status">Select a task to begin</div>
+    </div>
+
+    <!-- STATS -->
+    <div class="card">
+        <h2>Current Status</h2>
+        <div class="stats-grid">
+            <div class="stat-box">
+                <div class="stat-label">Queue Length</div>
+                <div class="stat-value" id="queue">0</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">Available Beds</div>
+                <div class="stat-value" id="beds">0</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">Simulation Time</div>
+                <div class="stat-value" id="time" style="color: var(--success);">0m</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">Critical Waiting</div>
+                <div class="stat-value" id="critical" style="color: var(--danger);">0</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="grid">
+        <!-- ACTION PANEL -->
+        <div class="card">
+            <h2>2. Take Action</h2>
+            
+            <div class="form-group">
+                <label>Action Type</label>
+                <select id="action" onchange="updateSelects()">
+                    <option value="wait">⏸️ Wait</option>
+                    <option value="assign">👨‍⚕️ Assign to Doctor</option>
+                    <option value="discharge">👋 Discharge Patient</option>
+                    <option value="prioritize">⬆️ Prioritize Patient</option>
+                </select>
+            </div>
+
+            <div class="form-group" id="patient-group" style="display:none;">
+                <label>Select Patient</label>
+                <select id="patient"></select>
+            </div>
+
+            <div class="form-group" id="doctor-group" style="display:none;">
+                <label>Select Doctor</label>
+                <select id="doctor"></select>
+            </div>
+
+            <div class="flex gap-12">
+                <button class="btn-primary" onclick="runStep()" id="run-btn">Run Step</button>
+                <button class="btn-ghost ai-button" onclick="suggestAction()" id="ai-btn">🤖 AI Suggest</button>
+            </div>
+        </div>
+
+        <!-- PATIENTS TABLE -->
+        <div class="card">
+            <h2>Waiting Patients</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Priority</th>
+                        <th>Severity</th>
+                        <th>Wait</th>
+                    </tr>
+                </thead>
+                <tbody id="patients">
+                    <tr><td colspan="4" style="text-align: center; color: var(--text-muted);">No data yet</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- DOCTORS TABLE -->
+    <div class="card">
+        <h2>Medical Staff</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Doctor Name</th>
+                    <th>Specialization</th>
+                    <th>Status</th>
+                    <th>Current Patient</th>
+                </tr>
+            </thead>
+            <tbody id="doctors">
+                <tr><td colspan="4" style="text-align: center; color: var(--text-muted);">No data yet</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+let currentObs = null;
+let isLoading = false;
+
+async function api(url, options={}) {
+    const res = await fetch(url, {
+        headers: { "Content-Type": "application/json" },
+        ...options
+    });
+    if (!res.ok) {
+        throw new Error(`HTTP ${res.status}`);
+    }
+    return res.json();
+}
+
+async function startTask(task) {
+    try {
+        isLoading = true;
+        const data = await api("/reset", {
+            method: "POST",
+            body: JSON.stringify({ task_id: task })
+        });
+        updateUI(data);
+        document.getElementById("status").className = "status";
+    } catch (error) {
+        document.getElementById("status").className = "status error";
+        document.getElementById("status").innerText = `❌ Error: ${error.message}`;
+    } finally {
+        isLoading = false;
+    }
+}
+
+function updateSelects() {
+    const actionType = document.getElementById("action").value;
+    const patientGroup = document.getElementById("patient-group");
+    const doctorGroup = document.getElementById("doctor-group");
+
+    patientGroup.style.display = (actionType !== "wait") ? "block" : "none";
+    doctorGroup.style.display = (actionType === "assign") ? "block" : "none";
+}
+
+async function runStep() {
+    if (isLoading) return;
+    
+    try {
+        isLoading = true;
+        document.getElementById("run-btn").disabled = true;
+
+        const actionType = document.getElementById("action").value;
+        const patientId = document.getElementById("patient").value;
+        const doctorId = document.getElementById("doctor").value;
+
+        const action = { action_type: actionType };
+        
+        if (actionType !== "wait") {
+            if (!patientId) {
+                throw new Error("Please select a patient");
+            }
+            action.patient_id = parseInt(patientId);
+        }
+
+        if (actionType === "assign") {
+            if (!doctorId) {
+                throw new Error("Please select a doctor");
+            }
+            action.doctor_id = parseInt(doctorId);
+        }
+
+        const data = await api("/step", {
+            method: "POST",
+            body: JSON.stringify({ action })
+        });
+
+        updateUI(data);
+        document.getElementById("status").className = "status";
+    } catch (error) {
+        document.getElementById("status").className = "status error";
+        document.getElementById("status").innerText = `❌ ${error.message}`;
+    } finally {
+        isLoading = false;
+        document.getElementById("run-btn").disabled = false;
+    }
+}
+
+async function runAIStep(action) {
+    try {
+        isLoading = true;
+        document.getElementById("ai-btn").disabled = true;
+
+        const data = await api("/step", {
+            method: "POST",
+            body: JSON.stringify({ action })
+        });
+
+        updateUI(data);
+        document.getElementById("status").className = "status";
+    } catch (error) {
+        document.getElementById("status").className = "status error";
+        document.getElementById("status").innerText = `❌ ${error.message}`;
+    } finally {
+        isLoading = false;
+        document.getElementById("ai-btn").disabled = false;
+    }
+}
+
+function updateUI(data) {
+    const obs = data.observation;
+    const reward = data.reward;
+    currentObs = obs;
+
+    // Update status
+    let statusText = `✅ ${obs.step_feedback || "Task step completed"}`;
+    if (reward !== null) {
+        statusText += ` | Reward: ${reward.toFixed(3)}`;
+    }
+    document.getElementById("status").innerText = statusText;
+
+    // Update stats
+    document.getElementById("queue").innerText = obs.queue_length || 0;
+    document.getElementById("beds").innerText = obs.beds_available || 0;
+    document.getElementById("time").innerText = `${obs.current_time_minutes || 0}m`;
+    document.getElementById("critical").innerText = obs.critical_untreated || 0;
+
+    // Update patients table
+    const patients = obs.waiting_patients || [];
+    document.getElementById("patients").innerHTML = patients.length ? 
+        patients.map(p => `
+            <tr>
+                <td>${p.name}</td>
+                <td><span class="tag tag-${p.priority}">${p.priority}</span></td>
+                <td>${p.severity_score || 0}</td>
+                <td>${p.wait_minutes || 0}m</td>
+            </tr>
+        `).join("") :
+        '<tr><td colspan="4" style="text-align: center; color: var(--text-muted);">No waiting patients</td></tr>';
+
+    // Update doctors table
+    const doctors = obs.doctors || [];
+    document.getElementById("doctors").innerHTML = doctors.length ?
+        doctors.map(d => `
+            <tr>
+                <td>${d.name}</td>
+                <td>${d.specialization}</td>
+                <td><span class="tag ${d.busy ? 'tag-busy' : 'tag-free'}">${d.busy ? 'Busy' : 'Free'}</span></td>
+                <td>${d.current_patient_id ? `Patient #${d.current_patient_id}` : '-'}</td>
+            </tr>
+        `).join("") :
+        '<tr><td colspan="4" style="text-align: center; color: var(--text-muted);">No doctors available</td></tr>';
+
+    // Update select dropdowns
+    document.getElementById("patient").innerHTML = patients.length ?
+        patients.map(p => `<option value="${p.id}">${p.name} (${p.priority})</option>`).join("") :
+        '<option value="">No patients</option>';
+
+    document.getElementById("doctor").innerHTML = doctors.length ?
+        doctors.map(d => `<option value="${d.id}">${d.name} (${d.specialization}) ${d.busy ? '- Busy' : '- Free'}</option>`).join("") :
+        '<option value="">No doctors</option>';
+
+    // Update select visibility
+    updateSelects();
+}
+
+function suggestAction() {
+    if (!currentObs) {
+        document.getElementById("status").className = "status error";
+        document.getElementById("status").innerText = "❌ Start a task first!";
+        return;
+    }
+
+    const patients = currentObs.waiting_patients || [];
+    const doctors = currentObs.doctors || [];
+
+    // Find most critical patient
+    let criticalPatient = null;
+    if (patients.length) {
+        criticalPatient = patients.sort((a, b) =>
+            (b.priority === 'emergency' ? 2 : b.priority === 'urgent' ? 1 : 0) -
+            (a.priority === 'emergency' ? 2 : a.priority === 'urgent' ? 1 : 0) ||
+            b.severity_score - a.severity_score ||
+            b.wait_minutes - a.wait_minutes
+        )[0];
+    }
+
+    // Find free doctor
+    const freeDoctor = doctors.find(d => !d.busy);
+
+    let action = { action_type: "wait" };
+
+    if (criticalPatient && freeDoctor) {
+        action = {
+            action_type: "assign",
+            patient_id: criticalPatient.id,
+            doctor_id: freeDoctor.id
+        };
+    } else if (criticalPatient) {
+        action = {
+            action_type: "prioritize",
+            patient_id: criticalPatient.id
+        };
+    }
+
+    console.log("🤖 AI Suggested:", action);
+    runAIStep(action);
+}
+</script>
+
+</body>
+</html>"""
