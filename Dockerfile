@@ -12,6 +12,7 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir --retries 5 --use-deprecated=legacy-resolver -r requirements.txt
 
 COPY app ./app
+COPY templates ./templates
 COPY openenv.yaml .
 
 EXPOSE 7860
