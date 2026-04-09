@@ -120,6 +120,10 @@
             margin-bottom: 16px;
         }
 
+        .task-buttons .btn-secondary {
+            flex: 1 1 180px;
+        }
+
         button {
             padding: 10px 16px;
             border-radius: 10px;
@@ -252,6 +256,22 @@
             font-size: 14px;
         }
 
+        .table-scroll {
+            width: 100%;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .doctors-table {
+            table-layout: fixed;
+        }
+
+        .doctors-table th,
+        .doctors-table td {
+            overflow-wrap: anywhere;
+            word-break: break-word;
+        }
+
         th, td {
             padding: 12px;
             text-align: left;
@@ -311,6 +331,69 @@
         }
 
         .gap-12 { gap: 12px; }
+
+        @media (max-width: 640px) {
+            .navbar {
+                padding: 14px 16px;
+            }
+
+            .navbar h1 {
+                font-size: 18px;
+            }
+
+            .navbar-subtitle {
+                font-size: 11px;
+                letter-spacing: 0.3px;
+            }
+
+            .container {
+                padding: 14px;
+            }
+
+            .card {
+                padding: 16px;
+                border-radius: 14px;
+            }
+
+            .card h2 {
+                font-size: 16px;
+                margin-bottom: 12px;
+            }
+
+            .task-buttons {
+                display: grid;
+                grid-template-columns: 1fr;
+                gap: 10px;
+                margin-bottom: 12px;
+            }
+
+            .task-buttons .btn-secondary {
+                width: 100%;
+                justify-content: center;
+                text-align: center;
+                font-size: 13px;
+                padding: 11px 12px;
+            }
+
+            #status {
+                font-size: 13px;
+                line-height: 1.45;
+            }
+
+            .table-scroll {
+                margin-top: 12px;
+            }
+
+            .doctors-table {
+                min-width: 520px;
+                font-size: 12px;
+            }
+
+            .doctors-table th,
+            .doctors-table td {
+                padding: 8px 6px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -410,19 +493,21 @@
     <!-- DOCTORS TABLE -->
     <div class="card">
         <h2>Medical Staff</h2>
-        <table>
-            <thead>
-                <tr>
-                    <th>Doctor Name</th>
-                    <th>Specialization</th>
-                    <th>Status</th>
-                    <th>Current Patient</th>
-                </tr>
-            </thead>
-            <tbody id="doctors">
-                <tr><td colspan="4" style="text-align: center; color: var(--card-border);">No data yet</td></tr>
-            </tbody>
-        </table>
+        <div class="table-scroll">
+            <table class="doctors-table">
+                <thead>
+                    <tr>
+                        <th>Doctor Name</th>
+                        <th>Specialization</th>
+                        <th>Status</th>
+                        <th>Current Patient</th>
+                    </tr>
+                </thead>
+                <tbody id="doctors">
+                    <tr><td colspan="4" style="text-align: center; color: var(--card-border);">No data yet</td></tr>
+                </tbody>
+            </table>
+        </div>
     </div>
 </div>
 
@@ -570,7 +655,7 @@ function updateUI(data) {
                 <td>${d.name}</td>
                 <td>${d.specialization}</td>
                 <td><span class="tag ${d.busy ? 'tag-busy' : 'tag-free'}">${d.busy ? 'Busy' : 'Free'}</span></td>
-                <td>${d.current_patient_id ? `Patient #${d.current_patient_id}` : '-'}</td>
+                <td class="current-patient-cell">${d.current_patient_id ? `Patient #${d.current_patient_id}` : '-'}</td>
             </tr>
         `).join("") :
         '<tr><td colspan="4" style="text-align: center; color: var(--text-muted);">No doctors available</td></tr>';
