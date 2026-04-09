@@ -53,7 +53,7 @@ async def unhandled_exception_handler(_request: Request, exc: Exception) -> JSON
 @app.get("/", response_class=HTMLResponse)
 def root() -> str:
     """Serve the interactive dashboard as the default landing page."""
-    # Try multiple possible paths
+    # Try multiple possible paths first.
     possible_paths = [
         Path(__file__).parent.parent / "templates" / "ui.html",  # Production path
         Path.cwd() / "templates" / "ui.html",  # Current working directory
@@ -64,24 +64,11 @@ def root() -> str:
         if template_path.exists():
             try:
                 return template_path.read_text(encoding="utf-8")
-            except Exception as e:
+            except Exception:
                 continue
-    
-    # If no template found, return helpful error
-    return f"""
-    <html>
-    <head><title>MedFlow - Error</title></head>
-    <body style="font-family: Arial; padding: 20px;">
-        <h1>UI Template Not Found</h1>
-        <p>Working directory: {Path.cwd()}</p>
-        <p>Tried paths:</p>
-        <ul>
-            {''.join(f'<li>{p}</li>' for p in possible_paths)}
-        </ul>
-        <p><a href="/health">Check Health</a> | <a href="/docs">API Docs</a></p>
-    </body>
-    </html>
-    """
+
+    # Deployment-safe fallback: serve embedded template when file paths are unavailable.
+    return DASHBOARD_HTML
 
 
 @app.get("/api", response_class=JSONResponse)
