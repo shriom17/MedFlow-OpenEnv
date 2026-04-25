@@ -1,8 +1,8 @@
 """Minimal training/demo runner for an OpenEnv-like environment.
 
 Usage examples:
-  python -m train.train_unsloth --env app.openenv_medflow --episodes 5 --demo
-  python -m train.train_unsloth --env app/openenv_medflow --episodes 3
+    python -m train.train_unsloth --env app.env --episodes 5 --demo
+    python -m train.train_unsloth --env app.openenv_medflow --episodes 3
 
 This script will import the environment module, run episodes with simple
 heuristic/random actions, save per-episode JSON logs to `outputs/logs/` and
@@ -14,11 +14,92 @@ import importlib
 import json
 import os
 import random
-from typing import List
+from typing import Any, Dict, List, Optional
+
+
+def _load_hospital_action_cls():
+    try:
+        from app.models import HospitalAction
+
+        return HospitalAction
+    except Exception:
+        return None
+
+
+def _is_structured_env(obs: Any) -> bool:
+    return hasattr(obs, "waiting_patients") and hasattr(obs, "doctors")
+
+
+def _action_to_text(action: Any) -> str:
+    if hasattr(action, "action_type"):
+        action_type = getattr(action, "action_type", "wait")
+        patient_id = getattr(action, "patient_id", None)
+        doctor_id = getattr(action, "doctor_id", None)
+        if action_type == "assign":
+            return f"assign(patient_id={patient_id},doctor_id={doctor_id})"
+        if action_type == "prioritize":
+            return f"prioritize(patient_id={patient_id})"
+        if action_type == "discharge":
+            return f"discharge(patient_id={patient_id})"
+        return "wait"
+    return str(action)
+
+
+def _serialize_obs(obs: Any) -> Dict[str, Any]:
+    if _is_structured_env(obs):
+        return {
+            "done": bool(getattr(obs, "done", False)),
+            "reward": float(getattr(obs, "reward", 0.0) or 0.0),
+            "step_feedback": str(getattr(obs, "step_feedback", "")),
+            "queue_length": int(getattr(obs, "queue_length", 0) or 0),
+            "beds_available": int(getattr(obs, "beds_available", 0) or 0),
+            "current_time_minutes": int(getattr(obs, "current_time_minutes", 0) or 0),
+        }
+    return {
+        "done": bool(obs[2]) if isinstance(obs, tuple) and len(obs) > 2 else False,
+        "reward": float(obs[1]) if isinstance(obs, tuple) and len(obs) > 1 else 0.0,
+        "step_feedback": str(obs[3]) if isinstance(obs, tuple) and len(obs) > 3 else "",
+    }
+
+
+def _choose_structured_action(env, obs, hospital_action_cls):
+    waiting = list(getattr(obs, "waiting_patients", []))
+    doctors = list(getattr(obs, "doctors", []))
+    free_docs = [d for d in doctors if not d.get("busy", False)]
+
+    if waiting and free_docs and hospital_action_cls is not None:
+        priority_rank = {"emergency": 0, "urgent": 1, "normal": 2}
+        patient = sorted(
+            waiting,
+            key=lambda p: (
+                priority_rank.get(p.get("priority", "normal"), 3),
+                -int(p.get("severity_score", 0)),
+                -int(p.get("wait_minutes", 0)),
+                int(p.get("id", 0)),
+            ),
+        )[0]
+        required = patient.get("required_specialization")
+        matching = [d for d in free_docs if d.get("specialization") == required]
+        general = [d for d in free_docs if d.get("specialization") == "General"]
+        doctor = (matching or general or free_docs)[0]
+        return hospital_action_cls(action_type="assign", patient_id=patient["id"], doctor_id=doctor["id"])
+
+    if waiting and hospital_action_cls is not None:
+        patient = sorted(
+            waiting,
+            key=lambda p: (
+                0 if p.get("priority") == "emergency" else 1 if p.get("priority") == "urgent" else 2,
+                int(p.get("wait_minutes", 0)),
+                int(p.get("id", 0)),
+            ),
+        )[0]
+        return hospital_action_cls(action_type="prioritize", patient_id=patient["id"])
+
+    return hospital_action_cls(action_type="wait") if hospital_action_cls is not None else "wait"
 
 
 def import_env_module(env_path: str):
-    # accept either module path (app.openenv_medflow) or file-like path (app/openenv_medflow)
+    # accept either module path (app.env) or file-like path (app/env)
     mod_path = env_path.replace("/", ".").rstrip(".py")
     return importlib.import_module(mod_path)
 
@@ -28,25 +109,29 @@ def run_demo(env_module, episodes: int = 5, demo: bool = True):
     os.makedirs("outputs/evals", exist_ok=True)
 
     total_rewards: List[float] = []
+    hospital_action_cls = _load_hospital_action_cls()
 
     for ep in range(1, episodes + 1):
         # instantiate environment: prefer make_env()
         if hasattr(env_module, "make_env"):
             env = env_module.make_env()
         else:
-            env = getattr(env_module, env_module.__name__.split(".")[-1].title(), None)
-            if env is None:
-                # fallback: try class OpenEnvMedFlow
-                env = getattr(env_module, "OpenEnvMedFlow")()
-            else:
-                env = env()
+            env_cls = getattr(env_module, "HospitalQueueEnvironment", None)
+            if env_cls is None:
+                env_cls = getattr(env_module, "OpenEnvMedFlow", None)
+            if env_cls is None:
+                raise AttributeError(
+                    f"Could not find a usable environment class in {env_module.__name__}"
+                )
+            env = env_cls()
 
-        obs = env.reset()
+        obs = env.reset(task_id="easy_small_clinic") if hasattr(env, "reset") else env.reset()
         done = False
         ep_reward = 0.0
         steps = []
 
-        # simple action set for demo
+        structured = _is_structured_env(obs)
+        # simple action set for the legacy toy env
         actions = [
             "gather_history",
             "order_blood_test",
@@ -57,6 +142,15 @@ def run_demo(env_module, episodes: int = 5, demo: bool = True):
         ]
 
         while not done:
+            if structured:
+                a = _choose_structured_action(env, obs, hospital_action_cls)
+                obs = env.step(a)
+                r = float(getattr(obs, "reward", 0.0) or 0.0)
+                done = bool(getattr(obs, "done", False))
+                steps.append({"action": _action_to_text(a), "reward": r, "obs": _serialize_obs(obs)})
+                ep_reward += r
+                continue
+
             if demo:
                 # deterministic-ish heuristic: pick by step
                 a = actions[min(len(steps), len(actions) - 1)]
@@ -71,7 +165,7 @@ def run_demo(env_module, episodes: int = 5, demo: bool = True):
             except Exception:
                 # no grader present or error; keep env reward
                 pass
-            steps.append({"action": a, "reward": r, "obs": obs})
+            steps.append({"action": a, "reward": r, "obs": _serialize_obs((obs, r, done, info))})
             ep_reward += float(r)
 
         total_rewards.append(ep_reward)

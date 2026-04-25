@@ -88,6 +88,35 @@ The dashboard is now served at the root path and supports:
 3. Run `python inference.py --seed 42 --tasks easy_small_clinic medium_busy_opd hard_mass_casualty`.
 4. Observe structured logs for each step and final score per task.
 
+## How To Run
+
+Use these commands from the repository root:
+
+```bash
+python -m server.app
+python scripts/benchmark_medflow.py --episodes 3
+python scripts/greedy_policy.py --episodes 3
+python train/train_hftrl.py --out hftrl_colab.md
+python -m train.train_unsloth --env app.env --episodes 1 --demo
+```
+
+If you want a quick sanity check of the API surface after starting the server:
+
+```bash
+python test_api.py
+```
+
+The benchmark writes results to `outputs/benchmarks/benchmark_summary.json` and
+`outputs/benchmarks/benchmark_summary.md`.
+
+## How To Present To Judges
+
+1. Start with the problem: dynamic hospital triage under partial observability, limited beds, and specialist routing.
+2. Show the live API or dashboard first, then open the benchmark summary to prove the environment is measurable.
+3. Compare greedy vs random scores, and point to the step logs and final scores as evidence of feedback-driven behavior.
+4. Call out the judge-friendly artifacts: structured tasks, API endpoints, log files, and reproducible benchmark commands.
+5. End with the takeaway: this is not a toy prompt demo; it is an interactive world model with state, time, and consequences.
+
 Demo video: [Demo: MedFlow End-to-End Triage Run](https://youtu.be/LiL4BYJvFxs)
 
 ## Reward Graph

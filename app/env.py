@@ -64,6 +64,12 @@ class HospitalQueueEnvironment(Environment):
     # Helpers
     # ─────────────────────────────────────────
 
+    @staticmethod
+    def _action_value(action: Any, field_name: str, default: Any = None) -> Any:
+        if isinstance(action, dict):
+            return action.get(field_name, default)
+        return getattr(action, field_name, default)
+
     def _waiting(self) -> List[Patient]:
         q = [p for p in self._patients.values() if p.status == "waiting"]
         q.sort(key=lambda p: (
@@ -289,7 +295,7 @@ class HospitalQueueEnvironment(Environment):
         self._advance_clock()
         self._check_critical_deaths()
 
-        atype = action.action_type.lower()
+        atype = str(self._action_value(action, "action_type", "wait")).lower()
         reward = 0.0
         feedback = ""
 
@@ -368,8 +374,8 @@ class HospitalQueueEnvironment(Environment):
     # ─────────────────────────────────────────
 
     def _do_assign(self, action: HospitalAction):
-        pid = action.patient_id
-        did = action.doctor_id
+        pid = self._action_value(action, "patient_id")
+        did = self._action_value(action, "doctor_id")
 
         if pid is None or did is None:
             return -0.05, "assign requires patient_id and doctor_id."
@@ -432,7 +438,7 @@ class HospitalQueueEnvironment(Environment):
         return reward, feedback
 
     def _do_prioritize(self, action: HospitalAction):
-        pid = action.patient_id
+        pid = self._action_value(action, "patient_id")
         if pid is None:
             return -0.05, "prioritize requires patient_id."
         patient = self._patients.get(pid)
@@ -447,7 +453,7 @@ class HospitalQueueEnvironment(Environment):
         return 0.0, feedback
 
     def _do_discharge(self, action: HospitalAction):
-        pid = action.patient_id
+        pid = self._action_value(action, "patient_id")
         if pid is None:
             return -0.05, "discharge requires patient_id."
         patient = self._patients.get(pid)
