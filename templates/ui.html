@@ -730,7 +730,95 @@
 
             <p id="rewardText">Latest Reward: - | Avg: -</p>
         </section>
+    <button id="llm-btn" onclick="runLLMStep()">Run AI Agent</button>
 
+    <div class="ai-decision-card">
+    <h3>AI Agent Decision</h3>
+    <p id="aiAction">Action: -</p>
+    <p id="aiPatient">Patient ID: -</p>
+    <p id="aiDoctor">Doctor ID: -</p>
+    <p id="aiReward">Reward: -</p>
+    <p id="aiFeedback">Feedback: -</p>
+    </div>
+    <style>
+.ai-decision-card {
+  margin-top: 20px;
+  padding: 20px;
+  border-radius: 16px;
+  background: #11283f;
+  border-left: 5px solid #2563eb;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.08);
+}
+
+.ai-decision-card h3 {
+  margin-bottom: 12px;
+}
+
+.ai-decision-card p {
+  margin: 6px 0;
+  font-size: 15px;
+}
+</style>
+<script>
+async function runLLMStep() {
+    const llmBtn = document.getElementById("llm-btn");
+    try {
+        if (isLoading) return;
+        if (!currentObs) {
+            document.getElementById("status").className = "status-box error";
+            document.getElementById("status").innerText = "❌ Start a task first!";
+            return;
+        }
+
+        isLoading = true;
+        if (llmBtn) llmBtn.disabled = true;
+
+        const suggestRes = await fetch("/llm-step", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ observation: currentObs })
+        });
+        const suggestData = await suggestRes.json();
+
+        if (!suggestRes.ok || !suggestData?.success) {
+            throw new Error(suggestData?.detail || suggestData?.error?.message || "LLM suggestion failed");
+        }
+
+        const action = suggestData?.data?.action || { action_type: "wait" };
+        const approved = await confirmAction(action);
+        if (!approved) {
+            return;
+        }
+
+        const stepData = await api("/step", {
+            method: "POST",
+            body: JSON.stringify({ action })
+        });
+
+        updateUI(stepData);
+        pushTimelineEntry(action, stepData.observation, stepData.reward);
+        await refreshSummary(stepData.observation);
+        document.getElementById("status").className = "status-box";
+
+        document.getElementById("aiAction").innerText =
+            "Action: " + (action.action_type || "-");
+        document.getElementById("aiPatient").innerText =
+            "Patient ID: " + (action.patient_id ?? "-");
+        document.getElementById("aiDoctor").innerText =
+            "Doctor ID: " + (action.doctor_id ?? "-");
+        document.getElementById("aiReward").innerText =
+            "Reward: " + (stepData.reward ?? "-");
+        document.getElementById("aiFeedback").innerText =
+            "Feedback: " + (stepData.observation?.step_feedback || "-");
+    } catch (error) {
+        document.getElementById("status").className = "status-box error";
+        document.getElementById("status").innerText = `❌ ${error.message || error}`;
+    } finally {
+        isLoading = false;
+        if (llmBtn) llmBtn.disabled = false;
+    }
+}
+</script>
         <style>
         .reward-animation {
             margin-top: 22px;

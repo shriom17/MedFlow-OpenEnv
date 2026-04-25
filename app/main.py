@@ -20,7 +20,10 @@ from app.env import HospitalQueueEnvironment
 from app.models import HospitalAction, HospitalObservation
 from app.tasks import ALL_TASKS
 from app.templates import DASHBOARD_HTML
+from huggingface_hub import InferenceClient
+import os
 
+client = InferenceClient(token=os.environ.get("HF_TOKEN"))
 
 if create_app is not None:
     app = create_app(
@@ -39,6 +42,61 @@ LOGS_DIR = Path.cwd() / "outputs" / "logs"
 def _utc_now_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
 
+def build_prompt(obs):
+    waiting = val(obs, "waiting_patients", [])
+    doctors = val(obs, "doctors", [])
+
+    return f"""
+You are a hospital scheduling AI.
+
+Waiting patients: {waiting}
+Doctors: {doctors}
+
+Return ONLY JSON:
+{{
+ "action_type": "assign",
+ "patient_id": 1,
+ "doctor_id": 1
+}}
+
+Rules:
+- Prioritize emergency
+- Assign free doctors
+- Avoid waiting if possible
+"""
+
+class Action:
+    def __init__(self, action_type, patient_id=None, doctor_id=None):
+        self.action_type = action_type
+        self.patient_id = patient_id
+        self.doctor_id = doctor_id
+
+
+def get_action_from_llm(obs):
+    prompt = build_prompt(obs)
+
+    try:
+        response = client.text_generation(
+            prompt,
+            max_new_tokens=100
+        )
+
+        start = response.find("{")
+        end = response.rfind("}")
+
+        if start == -1 or end == -1:
+            return Action("wait")
+
+        data = json.loads(response[start:end+1])
+
+        return Action(
+            data.get("action_type", "wait"),
+            data.get("patient_id"),
+            data.get("doctor_id")
+        )
+
+    except:
+        return Action("wait")
 
 def _ok(data: dict) -> dict:
     return {"success": True, "timestamp": _utc_now_iso(), "data": data}
@@ -99,7 +157,10 @@ def _heuristic_action_from_obs(obs: HospitalObservation) -> dict:
         return {"action_type": "prioritize", "patient_id": int(patient["id"]), "doctor_id": None}
 
     return {"action_type": "wait", "patient_id": None, "doctor_id": None}
-
+def val(obs, key, default=None):
+    if isinstance(obs, dict):
+        return obs.get(key, default)
+    return getattr(obs, key, default)
 
 def _snapshot(task_id: str = "easy_small_clinic") -> dict:
     env = HospitalQueueEnvironment()
@@ -237,3 +298,80 @@ def get_log(name: str) -> dict:
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc)) from exc
     return _ok({"log": data})
+
+@app.post("/llm-step")
+def llm_step(payload: dict) -> dict:
+    observation = payload.get("observation")
+    if not isinstance(observation, dict):
+        raise HTTPException(status_code=400, detail="Request body must include an 'observation' object")
+
+    llm_action = get_action_from_llm(observation)
+    allowed_actions = {"assign", "discharge", "prioritize", "wait"}
+    action_type = llm_action.action_type if llm_action.action_type in allowed_actions else "wait"
+
+    def _to_int_or_none(value):
+        try:
+            return int(value) if value is not None else None
+        except (TypeError, ValueError):
+            return None
+
+    patient_id = _to_int_or_none(llm_action.patient_id)
+    doctor_id = _to_int_or_none(llm_action.doctor_id)
+
+    if action_type == "assign" and (patient_id is None or doctor_id is None):
+        action_type, patient_id, doctor_id = "wait", None, None
+    elif action_type in {"discharge", "prioritize"} and patient_id is None:
+        action_type, patient_id, doctor_id = "wait", None, None
+    elif action_type == "wait":
+        patient_id, doctor_id = None, None
+
+    # If LLM suggests 'wait' (or failed), compute a simple heuristic on the dict observation
+    source = "llm"
+    if action_type == "wait":
+        waiting = observation.get("waiting_patients", []) or []
+        doctors = observation.get("doctors", []) or []
+        free_docs = [d for d in doctors if not (d.get("busy") if isinstance(d, dict) else False)]
+
+        if waiting and free_docs:
+            priority_rank = {"emergency": 0, "urgent": 1, "normal": 2}
+            patient = sorted(
+                waiting,
+                key=lambda p: (
+                    priority_rank.get(p.get("priority", "normal"), 3),
+                    -int(p.get("severity_score", 0)),
+                    -int(p.get("wait_minutes", 0)),
+                    int(p.get("id", 0)),
+                ),
+            )[0]
+            required = patient.get("required_specialization")
+            matching = [d for d in free_docs if d.get("specialization") == required]
+            general = [d for d in free_docs if d.get("specialization") == "General"]
+            doctor = (matching or general or free_docs)[0]
+            action_type = "assign"
+            patient_id = int(patient.get("id"))
+            doctor_id = int(doctor.get("id"))
+            source = "heuristic"
+        elif waiting:
+            patient = sorted(
+                waiting,
+                key=lambda p: (
+                    0 if p.get("priority") == "emergency" else 1 if p.get("priority") == "urgent" else 2,
+                    -int(p.get("wait_minutes", 0)),
+                    int(p.get("id", 0)),
+                ),
+            )[0]
+            action_type = "prioritize"
+            patient_id = int(patient.get("id"))
+            doctor_id = None
+            source = "heuristic"
+
+    return _ok(
+        {
+            "action": {
+                "action_type": action_type,
+                "patient_id": patient_id,
+                "doctor_id": doctor_id,
+            },
+            "source": source,
+        }
+    )
