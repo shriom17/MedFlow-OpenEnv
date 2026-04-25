@@ -7,7 +7,7 @@ Observation : what the agent sees after each decision
 State   : full internal episode state (via client.state())
 """
 from __future__ import annotations
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, asdict
 from typing import Any, Dict, List, Optional
 
 
@@ -19,6 +19,23 @@ class HospitalAction:
     action_type: str = "assign"      # assign | prioritize | discharge | wait
     patient_id: Optional[int] = None
     doctor_id: Optional[int] = None
+    
+    def model_dump(self, *args, **kwargs) -> dict:
+        """Compatibility shim: return a serializable dict like pydantic's model_dump."""
+        return asdict(self)
+
+    @classmethod
+    def model_validate(cls, obj):
+        """Compatibility shim: accept dicts or similar and return a HospitalAction."""
+        if isinstance(obj, cls):
+            return obj
+        if obj is None:
+            return cls()
+        if isinstance(obj, dict):
+            return cls(**obj)
+        if hasattr(obj, "model_dump"):
+            return cls(**obj.model_dump())
+        raise TypeError(f"Cannot validate object of type {type(obj)} as {cls.__name__}")
 
 
 # ─────────────────────────────────────────────
@@ -39,6 +56,10 @@ class HospitalObservation:
     task_id: str = ""
     task_description: str = ""
     progress_score: float = 0.0
+    
+    def model_dump(self, *args, **kwargs) -> dict:
+        """Compatibility shim: return a serializable dict like pydantic's model_dump."""
+        return asdict(self)
 
 
 # ─────────────────────────────────────────────
@@ -56,3 +77,7 @@ class HospitalState:
     submitted: bool = False
     final_score: Optional[float] = None
     task_description: str = ""
+
+    def model_dump(self, *args, **kwargs) -> dict:
+        """Compatibility shim: return a serializable dict like pydantic's model_dump."""
+        return asdict(self)

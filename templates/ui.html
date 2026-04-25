@@ -252,6 +252,71 @@
             color: #fca5a5;
         }
 
+        .episode-summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+            gap: 12px;
+        }
+
+        .summary-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            border-radius: 999px;
+            border: 1px solid rgba(16, 185, 129, 0.35);
+            background: rgba(16, 185, 129, 0.12);
+            color: #86efac;
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            margin-bottom: 14px;
+        }
+
+        .summary-pill.done {
+            border-color: rgba(245, 158, 11, 0.45);
+            background: rgba(245, 158, 11, 0.16);
+            color: #fcd34d;
+        }
+
+        .warning-box {
+            margin-top: 12px;
+            border-radius: 12px;
+            border: 1px solid rgba(249, 115, 22, 0.35);
+            background: rgba(249, 115, 22, 0.12);
+            color: #fdba74;
+            padding: 10px 12px;
+            font-size: 13px;
+            line-height: 1.4;
+        }
+
+        .warning-box strong {
+            color: #ffedd5;
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .warning-box ul {
+            padding-left: 16px;
+            margin: 0;
+        }
+
+        .timeline-reward-pos {
+            color: #86efac;
+            font-weight: 700;
+        }
+
+        .timeline-reward-neg {
+            color: #fca5a5;
+            font-weight: 700;
+        }
+
+        .timeline-reward-zero {
+            color: var(--text-secondary);
+            font-weight: 700;
+        }
+
         .critical-alert {
             display: flex;
             align-items: center;
@@ -535,6 +600,54 @@
     </div>
 
     <div class="grid">
+        <div class="card">
+            <h2>Episode Summary</h2>
+            <div id="episode-status" class="summary-pill">Running</div>
+            <div class="episode-summary-grid">
+                <div class="stat-box">
+                    <div class="stat-label">Final Score</div>
+                    <div class="stat-value" id="summary-final">-</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">Total Seen</div>
+                    <div class="stat-value" id="summary-seen">0</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">Total Arrived</div>
+                    <div class="stat-value" id="summary-arrived">0</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">Avg Wait</div>
+                    <div class="stat-value" id="summary-wait">0m</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">Critical Deaths</div>
+                    <div class="stat-value" id="summary-deaths" style="color: var(--danger);">0</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>Action Timeline (Last 10)</h2>
+            <div class="table-scroll">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Time</th>
+                            <th>Action</th>
+                            <th>Reward</th>
+                            <th>Feedback</th>
+                        </tr>
+                    </thead>
+                    <tbody id="timeline-body">
+                        <tr><td colspan="4" style="text-align: center; color: var(--text-muted);">No actions yet</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="grid">
         <!-- ACTION PANEL -->
         <div class="card">
             <h2>2. Take Action</h2>
@@ -563,6 +676,8 @@
                 <button class="btn-primary" onclick="runStep()" id="run-btn">Run Step</button>
                 <button class="btn-ghost ai-button" onclick="suggestAction()" id="ai-btn">🤖 AI Suggest</button>
             </div>
+
+            <div id="action-warning" class="warning-box hidden"></div>
         </div>
 
         <!-- PATIENTS TABLE -->
@@ -620,6 +735,7 @@
 let currentObs = null;
 let isLoading = false;
 let confirmResolver = null;
+let actionTimeline = [];
 
 async function api(url, options={}) {
     const res = await fetch(url, {
@@ -632,6 +748,186 @@ async function api(url, options={}) {
     return res.json();
 }
 
+function normalizeStatePayload(payload) {
+    if (!payload || typeof payload !== "object") return null;
+    if (payload.state && typeof payload.state === "object") return payload.state;
+    if (payload.data && payload.data.state && typeof payload.data.state === "object") return payload.data.state;
+    if (payload.task_id !== undefined || payload.step_count !== undefined) return payload;
+    return null;
+}
+
+async function fetchStateSafe() {
+    try {
+        const payload = await api("/state");
+        return normalizeStatePayload(payload);
+    } catch (_error) {
+        return null;
+    }
+}
+
+function formatAction(action) {
+    if (!action || !action.action_type) {
+        return "wait";
+    }
+    const type = action.action_type;
+    if (type === "assign") {
+        return `assign(p#${action.patient_id ?? "-"}, d#${action.doctor_id ?? "-"})`;
+    }
+    if (type === "prioritize") {
+        return `prioritize(p#${action.patient_id ?? "-"})`;
+    }
+    if (type === "discharge") {
+        return `discharge(p#${action.patient_id ?? "-"})`;
+    }
+    return type;
+}
+
+function renderTimeline() {
+    const tbody = document.getElementById("timeline-body");
+    if (!actionTimeline.length) {
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: var(--text-muted);">No actions yet</td></tr>';
+        return;
+    }
+
+    tbody.innerHTML = actionTimeline.map(item => {
+        let rewardClass = "timeline-reward-zero";
+        if (item.reward > 0) rewardClass = "timeline-reward-pos";
+        if (item.reward < 0) rewardClass = "timeline-reward-neg";
+        return `
+            <tr>
+                <td>${item.timeLabel}</td>
+                <td>${item.actionText}</td>
+                <td><span class="${rewardClass}">${item.reward.toFixed(3)}</span></td>
+                <td>${item.feedback}</td>
+            </tr>
+        `;
+    }).join("");
+}
+
+function pushTimelineEntry(action, obs, reward) {
+    if (!obs) return;
+    const entry = {
+        timeLabel: `${obs.current_time_minutes || 0}m`,
+        actionText: formatAction(action),
+        reward: Number(reward ?? obs.reward ?? 0),
+        feedback: (obs.step_feedback || "-").slice(0, 120),
+    };
+    actionTimeline.unshift(entry);
+    actionTimeline = actionTimeline.slice(0, 10);
+    renderTimeline();
+}
+
+function updateEpisodeSummary(obs, state = null) {
+    const doctors = Array.isArray(obs?.doctors) ? obs.doctors : [];
+    const seenFallback = doctors.reduce((sum, doctor) => sum + Number(doctor.patients_seen || 0), 0);
+    const arrivedFallback = seenFallback + Number(obs?.queue_length || 0);
+
+    const finalScore = (state?.final_score ?? (obs?.done ? obs?.reward : null));
+    const totalSeen = state?.total_patients_seen ?? seenFallback;
+    const totalArrived = state?.total_patients_arrived ?? arrivedFallback;
+    const avgWait = state?.avg_wait_all ?? obs?.avg_wait_minutes ?? 0;
+    const criticalDeaths = state?.critical_deaths ?? 0;
+
+    document.getElementById("summary-final").innerText = finalScore === null || finalScore === undefined
+        ? "-"
+        : Number(finalScore).toFixed(3);
+    document.getElementById("summary-seen").innerText = Number(totalSeen || 0);
+    document.getElementById("summary-arrived").innerText = Number(totalArrived || 0);
+    document.getElementById("summary-wait").innerText = `${Number(avgWait || 0).toFixed(1)}m`;
+    document.getElementById("summary-deaths").innerText = Number(criticalDeaths || 0);
+
+    const statusEl = document.getElementById("episode-status");
+    const isDone = Boolean(obs?.done);
+    statusEl.classList.toggle("done", isDone);
+    statusEl.innerText = isDone ? "Episode Completed" : "Running";
+}
+
+async function refreshSummary(obs) {
+    if (!obs) return;
+    const state = await fetchStateSafe();
+    updateEpisodeSummary(obs, state);
+}
+
+function getActionWarnings() {
+    const warnings = [];
+    const actionType = document.getElementById("action").value;
+    const patientIdRaw = document.getElementById("patient").value;
+    const doctorIdRaw = document.getElementById("doctor").value;
+
+    if (!currentObs) {
+        warnings.push("Start a task first before taking actions.");
+        return warnings;
+    }
+
+    const waitingPatients = Array.isArray(currentObs.waiting_patients) ? currentObs.waiting_patients : [];
+    const doctors = Array.isArray(currentObs.doctors) ? currentObs.doctors : [];
+    const patientId = patientIdRaw ? parseInt(patientIdRaw) : null;
+    const doctorId = doctorIdRaw ? parseInt(doctorIdRaw) : null;
+    const selectedPatient = waitingPatients.find(p => p.id === patientId);
+    const selectedDoctor = doctors.find(d => d.id === doctorId);
+
+    if (actionType === "assign") {
+        if (currentObs.beds_available <= 0) {
+            warnings.push("No beds available now; assigning may fail until a discharge frees capacity.");
+        }
+        if (!patientId) {
+            warnings.push("Select a patient before running assign.");
+        }
+        if (!doctorId) {
+            warnings.push("Select a doctor before running assign.");
+        }
+        if (selectedDoctor?.busy) {
+            warnings.push(`Doctor ${selectedDoctor.name} is currently busy.`);
+        }
+        if (selectedPatient && selectedDoctor) {
+            const req = selectedPatient.required_specialization;
+            const spec = selectedDoctor.specialization;
+            const mismatch = req !== spec && spec !== "General" && req !== "General";
+            if (mismatch) {
+                warnings.push(`Specialization mismatch: patient needs ${req}, selected doctor is ${spec}.`);
+            }
+        }
+    }
+
+    if (actionType === "prioritize") {
+        if (!patientId) {
+            warnings.push("Select a patient before prioritize action.");
+        }
+        if (selectedPatient?.priority === "emergency") {
+            warnings.push("Selected patient is already emergency priority.");
+        }
+    }
+
+    if (actionType === "discharge") {
+        if (!patientId) {
+            warnings.push("Select a patient before discharge.");
+        }
+        const inTreatment = doctors.some(d => Number(d.current_patient_id) === patientId);
+        if (patientId && !inTreatment) {
+            warnings.push("Selected patient is not currently in treatment; discharge may fail.");
+        }
+    }
+
+    return warnings;
+}
+
+function renderActionWarnings() {
+    const box = document.getElementById("action-warning");
+    const warnings = getActionWarnings();
+
+    if (!warnings.length) {
+        box.classList.add("hidden");
+        box.innerHTML = "";
+        return;
+    }
+
+    box.classList.remove("hidden");
+    box.innerHTML = `
+        <strong>Pre-action safety check</strong>
+        <ul>${warnings.map(w => `<li>${w}</li>`).join("")}</ul>
+    `;
+}
+
 async function startTask(task) {
     try {
         isLoading = true;
@@ -639,7 +935,10 @@ async function startTask(task) {
             method: "POST",
             body: JSON.stringify({ task_id: task })
         });
+        actionTimeline = [];
+        renderTimeline();
         updateUI(data);
+        await refreshSummary(data.observation);
         document.getElementById("status").className = "status-box";
     } catch (error) {
         document.getElementById("status").className = "status-box error";
@@ -656,6 +955,7 @@ function updateSelects() {
 
     patientGroup.style.display = (actionType !== "wait") ? "block" : "none";
     doctorGroup.style.display = (actionType === "assign") ? "block" : "none";
+    renderActionWarnings();
 }
 
 async function runStep() {
@@ -696,6 +996,8 @@ async function runStep() {
         });
 
         updateUI(data);
+        pushTimelineEntry(action, data.observation, data.reward);
+        await refreshSummary(data.observation);
         document.getElementById("status").className = "status-box";
     } catch (error) {
         document.getElementById("status").className = "status-box error";
@@ -722,6 +1024,8 @@ async function runAIStep(action) {
         });
 
         updateUI(data);
+        pushTimelineEntry(action, data.observation, data.reward);
+        await refreshSummary(data.observation);
         document.getElementById("status").className = "status-box";
     } catch (error) {
         document.getElementById("status").className = "status-box error";
@@ -788,6 +1092,7 @@ function updateUI(data) {
 
     // Update select visibility
     updateSelects();
+    renderActionWarnings();
 }
 
 function needsConfirmation(action) {
@@ -896,6 +1201,13 @@ document.getElementById("confirm-modal").addEventListener("click", (e) => {
         closeConfirmModal(false);
     }
 });
+
+document.getElementById("action").addEventListener("change", renderActionWarnings);
+document.getElementById("patient").addEventListener("change", renderActionWarnings);
+document.getElementById("doctor").addEventListener("change", renderActionWarnings);
+
+renderTimeline();
+renderActionWarnings();
 </script>
 
 </body>
