@@ -2,10 +2,10 @@
 
 This script trains a simple discrete policy against `HospitalQueueEnvironment`
 and saves judge-friendly artifacts:
-- reward curve (`outputs/evals/qlearning_reward_curve.png`)
-- loss curve (`outputs/evals/qlearning_loss_curve.png`)
-- trained-vs-random comparison (`outputs/evals/qlearning_policy_compare.png`)
-- per-episode metrics CSV (`outputs/evals/qlearning_training_metrics.csv`)
+- reward curve (`outputs/evals/training_reward_curve.png`)
+- loss curve (`outputs/evals/training_loss_curve.png`)
+- trained-vs-random comparison (`outputs/evals/training_policy_compare.png`)
+- per-episode metrics CSV (`outputs/evals/training_metrics.csv`)
 """
 
 from __future__ import annotations
@@ -238,7 +238,7 @@ def save_plots(outdir: str, rewards: List[float], losses: List[float], trained_a
     plt.title("Q-learning Training Reward Curve")
     plt.grid(alpha=0.25)
     plt.tight_layout()
-    plt.savefig(os.path.join(outdir, "qlearning_reward_curve.png"), dpi=150)
+    plt.savefig(os.path.join(outdir, "training_reward_curve.png"), dpi=150)
     plt.close()
 
     plt.figure(figsize=(8, 4.5))
@@ -248,7 +248,7 @@ def save_plots(outdir: str, rewards: List[float], losses: List[float], trained_a
     plt.title("Q-learning Training Loss Curve")
     plt.grid(alpha=0.25)
     plt.tight_layout()
-    plt.savefig(os.path.join(outdir, "qlearning_loss_curve.png"), dpi=150)
+    plt.savefig(os.path.join(outdir, "training_loss_curve.png"), dpi=150)
     plt.close()
 
     plt.figure(figsize=(6, 4.5))
@@ -259,7 +259,7 @@ def save_plots(outdir: str, rewards: List[float], losses: List[float], trained_a
     plt.ylabel("Average Total Reward")
     plt.title("Policy Comparison (same tasks)")
     plt.tight_layout()
-    plt.savefig(os.path.join(outdir, "qlearning_policy_compare.png"), dpi=150)
+    plt.savefig(os.path.join(outdir, "training_policy_compare.png"), dpi=150)
     plt.close()
 
 
@@ -329,7 +329,7 @@ def main() -> None:
         random_policy=True,
     )
 
-    csv_path = os.path.join(args.outdir, "qlearning_training_metrics.csv")
+    csv_path = os.path.join(args.outdir, "training_metrics.csv")
     save_training_csv(csv_path, rows)
     save_plots(args.outdir, rewards, losses, trained_avg, random_avg)
 
@@ -344,13 +344,13 @@ def main() -> None:
         "random_policy_avg_reward": round(random_avg, 4),
         "artifacts": {
             "csv": csv_path,
-            "reward_curve": os.path.join(args.outdir, "qlearning_reward_curve.png"),
-            "loss_curve": os.path.join(args.outdir, "qlearning_loss_curve.png"),
-            "comparison": os.path.join(args.outdir, "qlearning_policy_compare.png"),
+            "reward_curve": os.path.join(args.outdir, "training_reward_curve.png"),
+            "loss_curve": os.path.join(args.outdir, "training_loss_curve.png"),
+            "comparison": os.path.join(args.outdir, "training_policy_compare.png"),
         },
     }
 
-    summary_path = os.path.join(args.outdir, "qlearning_summary.json")
+    summary_path = os.path.join(args.outdir, "training_summary.json")
     with open(summary_path, "w", encoding="utf-8") as fh:
         json.dump(summary, fh, indent=2)
 

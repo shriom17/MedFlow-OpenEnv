@@ -136,21 +136,21 @@ The following artifacts are generated from a real local training run:
 python scripts/train_qlearning.py --episodes 60 --eval-episodes 2 --outdir outputs/evals
 ```
 
-- Per-episode metrics: `outputs/evals/qlearning_training_metrics.csv`
-- Training summary: `outputs/evals/qlearning_summary.json`
-- Reward curve: `outputs/evals/qlearning_reward_curve.png`
-- Loss curve: `outputs/evals/qlearning_loss_curve.png`
-- Trained-vs-random comparison: `outputs/evals/qlearning_policy_compare.png`
+- Per-episode metrics: `outputs/evals/training_metrics.csv`
+- Training summary: `outputs/evals/training_summary.json`
+- Reward curve: `outputs/evals/training_reward_curve.png`
+- Loss curve: `outputs/evals/training_loss_curve.png`
+- Trained-vs-random comparison: `outputs/evals/training_policy_compare.png`
 
-![Q-learning reward curve](outputs/evals/qlearning_reward_curve.png)
+![Training reward curve](outputs/evals/training_reward_curve.png)
 
 Caption: Episode-wise total reward during Q-learning training.
 
-![Q-learning loss curve](outputs/evals/qlearning_loss_curve.png)
+![Training loss curve](outputs/evals/training_loss_curve.png)
 
 Caption: Mean TD error squared (loss proxy) per training episode.
 
-![Trained vs random policy](outputs/evals/qlearning_policy_compare.png)
+![Trained vs random policy](outputs/evals/training_policy_compare.png)
 
 Caption: Average total reward comparison on the same task set after training.
 

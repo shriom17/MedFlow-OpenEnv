@@ -9,13 +9,9 @@ Dynamic patients arrive when sim_clock reaches their arrival_minute.
 
 Reward shaping
 --------------
-+0.15  — emergency patient assigned within 5 sim-minutes of arrival
-+0.10  — urgent patient assigned within 10 sim-minutes
-+0.05  — normal patient assigned
--0.10  — wrong specialization assigned (e.g. General to cardiac)
--0.15  — emergency patient waiting > 5 minutes (per step it persists)
--0.05  — bed overflow attempted
- 0.0   — wait action (no bonus, no penalty)
+Step rewards come from a composable rubric plus small invalid-action penalties.
+The default rubric rewards specialization matches and healthy bed utilization,
+and penalizes emergency waiting time.
 Final  — grader(episode_stats) on episode end
 """
 from __future__ import annotations
@@ -26,7 +22,7 @@ from typing import Any, Dict, List, Optional
 
 from openenv.core.env_server.interfaces import Environment
 from app.models import HospitalAction, HospitalObservation, HospitalState
-from app.tasks import ALL_TASKS, Doctor, Patient, TaskConfig
+from app.tasks import ALL_TASKS, Doctor, OpenEnvRubric, Patient, TaskConfig, default_rubric
 
 SIM_MINUTES_PER_STEP = 2
 
@@ -48,6 +44,7 @@ class HospitalQueueEnvironment(Environment):
         self._doctors: Dict[int, Doctor] = {}
         self._beds_total: int = 0
         self._beds_used: int = 0
+        self._rubric: OpenEnvRubric = default_rubric()
 
         self._pending_arrivals: List[Dict] = []  # dynamic patients not yet arrived
 
@@ -73,6 +70,7 @@ class HospitalQueueEnvironment(Environment):
     def _waiting(self) -> List[Patient]:
         q = [p for p in self._patients.values() if p.status == "waiting"]
         q.sort(key=lambda p: (
+            0 if p.priority_boosted else 1,
             0 if p.priority == "emergency" else 1 if p.priority == "urgent" else 2,
             p.arrival_minute,
         ))
@@ -238,6 +236,7 @@ class HospitalQueueEnvironment(Environment):
         self._task = ALL_TASKS.get(selected_task_id)
         if self._task is None:
             raise ValueError("Invalid task_id")
+        self._rubric = self._task.rubric or default_rubric()
 
         # build patients
         self._patients = {}
@@ -298,26 +297,44 @@ class HospitalQueueEnvironment(Environment):
         atype = str(self._action_value(action, "action_type", "wait")).lower()
         reward = 0.0
         feedback = ""
+        spec_match = None
+        action_valid = False
 
-        # ── ongoing penalty: emergency patient left waiting > 5 min ──
-        for p in self._waiting():
-            if p.priority == "emergency" and (self._sim_clock - p.arrival_minute) > 5:
-                reward -= 0.15
+        current_emergency_wait = [
+            self._sim_clock - p.arrival_minute
+            for p in self._waiting()
+            if p.priority == "emergency"
+        ]
+
+        rubric_state = {
+            "emergency_wait_minutes": current_emergency_wait,
+            "bed_utilization": (self._beds_used / self._beds_total) if self._beds_total else 0.0,
+        }
 
         if atype == "assign":
-            reward_delta, feedback = self._do_assign(action)
+            pid = self._action_value(action, "patient_id")
+            did = self._action_value(action, "doctor_id")
+            patient = self._patients.get(pid) if pid is not None else None
+            doctor = self._doctors.get(did) if did is not None else None
+            spec_match = self._specialization_ok(patient, doctor) if patient and doctor else False
+            rubric_state["specialization_match"] = spec_match
+            reward_delta, feedback, action_valid = self._do_assign(action)
             reward += reward_delta
         elif atype == "prioritize":
-            reward_delta, feedback = self._do_prioritize(action)
+            reward_delta, feedback, action_valid = self._do_prioritize(action)
             reward += reward_delta
         elif atype == "discharge":
-            reward_delta, feedback = self._do_discharge(action)
+            reward_delta, feedback, action_valid = self._do_discharge(action)
             reward += reward_delta
         elif atype == "wait":
             feedback = f"Waiting. Sim clock: {self._sim_clock} min. {len(self._waiting())} patients in queue."
+            action_valid = True
         else:
             feedback = f"Unknown action_type '{atype}'. Use assign | prioritize | discharge | wait."
             reward -= 0.05
+
+        if action_valid:
+            reward += self._rubric.score(rubric_state)
 
         # ── check episode end ──
         all_tasks_done = (
@@ -378,22 +395,22 @@ class HospitalQueueEnvironment(Environment):
         did = self._action_value(action, "doctor_id")
 
         if pid is None or did is None:
-            return -0.05, "assign requires patient_id and doctor_id."
+            return -0.05, "assign requires patient_id and doctor_id.", False
 
         patient = self._patients.get(pid)
         if patient is None:
-            return -0.05, f"Patient {pid} not found."
+            return -0.05, f"Patient {pid} not found.", False
         if patient.status != "waiting":
-            return -0.05, f"Patient {pid} is not waiting (status={patient.status})."
+            return -0.05, f"Patient {pid} is not waiting (status={patient.status}).", False
 
         doctor = self._doctors.get(did)
         if doctor is None:
-            return -0.05, f"Doctor {did} not found."
+            return -0.05, f"Doctor {did} not found.", False
         if doctor.busy:
-            return -0.05, f"Doctor {doctor.name} is busy. Wait or choose another doctor."
+            return -0.05, f"Doctor {doctor.name} is busy. Wait or choose another doctor.", False
 
         if self._beds_available() <= 0:
-            return -0.05, "No beds available. Discharge a patient first."
+            return -0.05, "No beds available. Discharge a patient first.", False
 
         # assign
         wait_time = self._sim_clock - patient.arrival_minute
@@ -435,32 +452,32 @@ class HospitalQueueEnvironment(Environment):
             f"Wait was {wait_time} min.{spec_msg} "
             f"Treatment finishes in {treatment_mins} min."
         )
-        return reward, feedback
+        return reward, feedback, True
 
     def _do_prioritize(self, action: HospitalAction):
         pid = self._action_value(action, "patient_id")
         if pid is None:
-            return -0.05, "prioritize requires patient_id."
+            return -0.05, "prioritize requires patient_id.", False
         patient = self._patients.get(pid)
         if patient is None:
-            return -0.05, f"Patient {pid} not found."
+            return -0.05, f"Patient {pid} not found.", False
         if patient.status != "waiting":
-            return -0.05, f"Patient {pid} is not waiting."
+            return -0.05, f"Patient {pid} is not waiting.", False
         # Bump to emergency priority AND set arrival to very early
         patient.priority = "emergency"
-        patient.arrival_minute = -9999
+        patient.priority_boosted = True
         feedback = f"Patient {patient.name} boosted to emergency priority and moved to front of queue."
-        return 0.0, feedback
+        return 0.0, feedback, True
 
     def _do_discharge(self, action: HospitalAction):
         pid = self._action_value(action, "patient_id")
         if pid is None:
-            return -0.05, "discharge requires patient_id."
+            return -0.05, "discharge requires patient_id.", False
         patient = self._patients.get(pid)
         if patient is None:
-            return -0.05, f"Patient {pid} not found."
+            return -0.05, f"Patient {pid} not found.", False
         if patient.status not in ("in_treatment", "waiting"):
-            return -0.05, f"Patient {pid} cannot be discharged (status={patient.status})."
+            return -0.05, f"Patient {pid} cannot be discharged (status={patient.status}).", False
 
         # free the doctor if still assigned
         if patient.assigned_doctor_id:
@@ -482,4 +499,4 @@ class HospitalQueueEnvironment(Environment):
             f"Bed freed. Doctor is now available. "
             f"Total discharged: {self._total_seen}."
         )
-        return 0.05, feedback
+        return 0.05, feedback, True

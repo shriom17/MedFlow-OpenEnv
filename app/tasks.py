@@ -40,6 +40,42 @@ class Patient:
     discharged_minute: Optional[int] = None
     assigned_doctor_id: Optional[int] = None
     status: str = "waiting"      # waiting | in_treatment | discharged
+    priority_boosted: bool = False
+
+
+@dataclass
+class OpenEnvRubric:
+    emergency_wait_time: Callable[[float], float]
+    specialization_match: Callable[[bool], float]
+    bed_utilization: Callable[[float], float]
+
+    @staticmethod
+    def _as_float(value: Any) -> float:
+        if isinstance(value, (list, tuple)):
+            return float(sum(float(item) for item in value))
+        return float(value)
+
+    def score(self, state: Dict[str, Any]) -> float:
+        score = 0.0
+
+        if state.get("emergency_wait_minutes") is not None:
+            score += float(self.emergency_wait_time(self._as_float(state["emergency_wait_minutes"])))
+
+        if state.get("specialization_match") is not None:
+            score += float(self.specialization_match(bool(state["specialization_match"])))
+
+        if state.get("bed_utilization") is not None:
+            score += float(self.bed_utilization(self._as_float(state["bed_utilization"])))
+
+        return round(score, 4)
+
+
+def default_rubric() -> OpenEnvRubric:
+    return OpenEnvRubric(
+        emergency_wait_time=lambda t: -0.01 * t,
+        specialization_match=lambda match: 0.10 if match else -0.10,
+        bed_utilization=lambda util: 0.05 * (1 - abs(util - 0.7)),
+    )
 
 
 @dataclass
@@ -54,6 +90,7 @@ class TaskConfig:
     dynamic_arrivals: List[Dict[str, Any]]   # patients that arrive mid-episode
     grader: Callable                         # (episode_stats) -> float
     hints: List[str]
+    rubric: Optional[OpenEnvRubric] = None
 
 
 # ─────────────────────────────────────────────
