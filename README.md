@@ -96,6 +96,7 @@ Use these commands from the repository root:
 python -m server.app
 python scripts/benchmark_medflow.py --episodes 3
 python scripts/greedy_policy.py --episodes 3
+python scripts/train_qlearning.py --episodes 60 --eval-episodes 2 --outdir outputs/evals
 python train/train_hftrl.py --out hftrl_colab.md
 python -m train.train_unsloth --env app.env --episodes 1 --demo
 ```
@@ -118,6 +119,40 @@ The benchmark writes results to `outputs/benchmarks/benchmark_summary.json` and
 5. End with the takeaway: this is not a toy prompt demo; it is an interactive world model with state, time, and consequences.
 
 Demo video: [Demo: MedFlow End-to-End Triage Run](https://youtu.be/LiL4BYJvFxs)
+
+## Submission Links (Judges)
+
+- Hugging Face Space: https://huggingface.co/spaces/shriom23/MedFlow-OpenEnv
+- Live App: https://shriom23-medflow-openenv.hf.space/
+- API Docs: https://shriom23-medflow-openenv.hf.space/docs
+- Demo Video (<2 min): https://youtu.be/LiL4BYJvFxs
+- Colab-ready TRL template: `hftrl_colab.md`
+
+## Real Training Evidence
+
+The following artifacts are generated from a real local training run:
+
+```bash
+python scripts/train_qlearning.py --episodes 60 --eval-episodes 2 --outdir outputs/evals
+```
+
+- Per-episode metrics: `outputs/evals/qlearning_training_metrics.csv`
+- Training summary: `outputs/evals/qlearning_summary.json`
+- Reward curve: `outputs/evals/qlearning_reward_curve.png`
+- Loss curve: `outputs/evals/qlearning_loss_curve.png`
+- Trained-vs-random comparison: `outputs/evals/qlearning_policy_compare.png`
+
+![Q-learning reward curve](outputs/evals/qlearning_reward_curve.png)
+
+Caption: Episode-wise total reward during Q-learning training.
+
+![Q-learning loss curve](outputs/evals/qlearning_loss_curve.png)
+
+Caption: Mean TD error squared (loss proxy) per training episode.
+
+![Trained vs random policy](outputs/evals/qlearning_policy_compare.png)
+
+Caption: Average total reward comparison on the same task set after training.
 
 ## Reward Graph
 
@@ -375,7 +410,7 @@ python -m app.rl_agent --tasks easy_small_clinic medium_busy_opd hard_mass_casua
 
 ## 🔮 Future Scope
 
-* Replace dummy RL with Q-learning / Deep RL
+* Scale current Q-learning baseline to Deep RL (PPO/DQN) with larger action search
 * Hybrid LLM + RL agent
 * Real-world hospital dataset integration
 
