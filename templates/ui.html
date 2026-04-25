@@ -753,10 +753,11 @@
             height: 180px;
             margin-top: 16px;
             border-radius: 12px;
-            border: 1px solid rgba(148, 163, 184, 0.35);
-            background: linear-gradient(180deg, rgba(15, 23, 42, 0.5), rgba(2, 6, 23, 0.75));
+            border: 1px solid rgba(56, 189, 248, 0.25);
+            background: linear-gradient(180deg, rgba(15, 23, 42, 0.8), rgba(2, 6, 23, 0.9));
             overflow: hidden;
             padding: 10px;
+            box-shadow: inset 0 1px 3px rgba(56, 189, 248, 0.1), 0 0 20px rgba(56, 189, 248, 0.05);
         }
 
         .reward-graph {
@@ -773,23 +774,36 @@
 
         .reward-curve-fill {
             fill: url(#rewardGrad);
-            opacity: 0.8;
+            opacity: 1;
+            animation: gradientFlow 3s ease-in-out infinite;
+        }
+
+        @keyframes gradientFlow {
+            0%, 100% { opacity: 0.85; }
+            50% { opacity: 1; }
         }
 
         .reward-curve-line {
             fill: none;
             stroke: #38bdf8;
-            stroke-width: 1.8;
+            stroke-width: 2;
             stroke-linecap: round;
             stroke-linejoin: round;
-            filter: drop-shadow(0 0 6px rgba(56, 189, 248, 0.35));
+            filter: drop-shadow(0 0 8px rgba(56, 189, 248, 0.5)) drop-shadow(0 0 16px rgba(56, 189, 248, 0.2));
             transition: all 0.3s ease;
         }
 
         .reward-point {
-            r: 1.8;
-            stroke-width: 0.8;
-            transition: all 0.3s ease;
+            r: 2;
+            stroke-width: 1;
+            transition: all 0.2s ease;
+            cursor: pointer;
+            filter: drop-shadow(0 0 3px rgba(0, 0, 0, 0.3));
+        }
+
+        .reward-point:hover {
+            r: 2.8;
+            filter: drop-shadow(0 0 8px rgba(56, 189, 248, 0.6));
         }
 
         .reward-point.pos {
@@ -797,14 +811,37 @@
             stroke: #10b981;
         }
 
+        .reward-point.pos:hover {
+            fill: #6ee7b7;
+            filter: drop-shadow(0 0 8px rgba(52, 211, 153, 0.6));
+        }
+
         .reward-point.neg {
             fill: #f87171;
             stroke: #ef4444;
         }
 
+        .reward-point.neg:hover {
+            fill: #fca5a5;
+            filter: drop-shadow(0 0 8px rgba(248, 113, 113, 0.6));
+        }
+
         .reward-point.zero {
             fill: #94a3b8;
             stroke: #64748b;
+        }
+
+        .reward-point.zero:hover {
+            fill: #cbd5e1;
+            filter: drop-shadow(0 0 8px rgba(148, 163, 184, 0.6));
+        }
+
+        #rewardText {
+            margin-top: 12px;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            letter-spacing: 0.3px;
         }
         </style>
 
