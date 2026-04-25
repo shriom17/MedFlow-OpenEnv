@@ -404,6 +404,24 @@
             gap: 8px;
         }
 
+        .llm-run-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-top: 18px;
+            margin-bottom: 8px;
+            padding: 11px 18px;
+            border-radius: 999px;
+            background: linear-gradient(135deg, #22c55e, #0f766e);
+            color: #f8fafc;
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            box-shadow: 0 10px 22px rgba(15, 118, 110, 0.22);
+        }
+
+        .llm-run-btn:hover:not(:disabled) {
+            box-shadow: 0 14px 28px rgba(15, 118, 110, 0.3);
+        }
+
         .loading {
             display: inline-block;
             width: 12px;
@@ -730,7 +748,7 @@
 
             <p id="rewardText">Latest Reward: - | Avg: -</p>
         </section>
-    <button id="llm-btn" onclick="runLLMStep()">Run AI Agent</button>
+    <button id="llm-btn" class="llm-run-btn" onclick="runLLMStep()">Run AI Agent</button>
 
     <div class="ai-decision-card">
     <h3>AI Agent Decision</h3>
@@ -739,6 +757,7 @@
     <p id="aiDoctor">Doctor ID: -</p>
     <p id="aiReward">Reward: -</p>
     <p id="aiFeedback">Feedback: -</p>
+    <p id="aiSource">Source: -</p>
     </div>
     <style>
 .ai-decision-card {
@@ -785,6 +804,9 @@ async function runLLMStep() {
         }
 
         const action = suggestData?.data?.action || { action_type: "wait" };
+        const source = suggestData?.data?.source || "llm";
+        const aiSourceEl = document.getElementById("aiSource");
+        if (aiSourceEl) aiSourceEl.innerText = "Source: " + source;
         const approved = await confirmAction(action);
         if (!approved) {
             return;
