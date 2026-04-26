@@ -6,8 +6,9 @@ emoji: 🏥
 colorFrom: green
 colorTo: blue
 sdk: docker
-app_file: app.py
 pinned: false
+license: mit
+short_description: Agentic Patient Prioritization System for AI agents
 ---
 
 > 🚀 **Agentic Patient Prioritization Environment for AI Systems**
