@@ -624,7 +624,7 @@
             <div class="episode-summary-grid">
                 <div class="stat-box">
                     <div class="stat-label">Final Score</div>
-                    <div class="stat-value" id="summary-final">-</div>
+                    <div class="stat-value" id="summary-final">0.000</div>
                 </div>
                 <div class="stat-box">
                     <div class="stat-label">Total Seen</div>
@@ -692,7 +692,7 @@
 
             <div class="flex gap-12">
                 <button class="btn-primary" onclick="runStep()" id="run-btn">Run Step</button>
-                <button class="btn-ghost ai-button" onclick="suggestAction()" id="ai-btn">🤖 AI Suggest</button>
+                <button class="btn-ghost ai-button" onclick="runLLMStep()" id="llm-btn">🤖 Run AI Agent</button>
             </div>
 
             <div id="action-warning" class="warning-box hidden"></div>
@@ -748,7 +748,6 @@
 
             <p id="rewardText">Latest Reward: - | Avg: -</p>
         </section>
-    <button id="llm-btn" class="llm-run-btn" onclick="runLLMStep()">Run AI Agent</button>
 
     <div class="ai-decision-card">
     <h3>AI Agent Decision</h3>
@@ -794,65 +793,86 @@ async function runLLMStep() {
         isLoading = true;
         if (llmBtn) llmBtn.disabled = true;
 
-        const res = await fetch("/llm-step", { method: "POST" });
-        const data = await res.json();
+        const suggestRes = await fetch("/llm-step", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ observation: currentObs })
+        });
+        const suggestData = await suggestRes.json();
 
-        if (!res.ok || !data.success) {
-            throw new Error(data.error || data.detail || "LLM step failed");
+        if (!suggestRes.ok || !suggestData?.success) {
+            throw new Error(suggestData?.detail || suggestData?.error?.message || "LLM suggestion failed");
         }
 
-        const obs = {
-            step_feedback: data.feedback,
-            reward: data.reward,
-            done: data.done,
-            queue_length: data.queue_length,
-            beds_available: data.beds_available,
-            current_time_minutes: currentObs?.current_time_minutes || 0,
-            waiting_patients: currentObs?.waiting_patients || [],
-            doctors: currentObs?.doctors || [],
-            critical_untreated: currentObs?.critical_untreated || 0,
-            avg_wait_minutes: currentObs?.avg_wait_minutes || 0
+        let action = suggestData?.data?.action || {
+            action_type: suggestData?.action_type || "wait",
+            patient_id: suggestData?.patient_id ?? null,
+            doctor_id: suggestData?.doctor_id ?? null,
         };
+        let source = suggestData?.data?.source || suggestData?.source || "llm";
 
-        currentObs = obs;
+        if (action.action_type === "wait") {
+            const waiting = currentObs?.waiting_patients || [];
+            const doctors = currentObs?.doctors || [];
+            const freeDocs = doctors.filter(d => !d.busy);
 
-        updateUI({
-            observation: obs,
-            reward: data.reward
+            if (waiting.length && freeDocs.length) {
+                const priorityRank = { emergency: 0, urgent: 1, normal: 2 };
+                const patient = [...waiting].sort((a, b) =>
+                    (priorityRank[a.priority] ?? 3) - (priorityRank[b.priority] ?? 3) ||
+                    (b.severity_score || 0) - (a.severity_score || 0) ||
+                    (b.wait_minutes || 0) - (a.wait_minutes || 0)
+                )[0];
+
+                const matching = freeDocs.filter(d => d.specialization === patient.required_specialization);
+                const general = freeDocs.filter(d => d.specialization === "General");
+                const doctor = (matching[0] || general[0] || freeDocs[0]);
+
+                action = {
+                    action_type: "assign",
+                    patient_id: patient.id,
+                    doctor_id: doctor.id,
+                };
+                source = "llm";
+            }
+        }
+
+        const approved = await confirmAction(action);
+        if (!approved) {
+            return;
+        }
+
+        const stepData = await api("/step", {
+            method: "POST",
+            body: JSON.stringify({ action })
         });
 
-        const action = {
-            action_type: data.action_type,
-            patient_id: data.patient_id,
-            doctor_id: data.doctor_id
-        };
-
-        pushTimelineEntry(action, obs, data.reward);
-        await refreshSummary(obs);
+        updateUI(stepData);
+        pushTimelineEntry(action, stepData.observation, stepData.reward);
+        await refreshSummary(stepData.observation);
+        document.getElementById("status").className = "status-box";
 
         document.getElementById("aiAction").innerText =
-            "Action: " + (data.action_type || "-");
+            "Action: " + (action.action_type || "-");
 
         document.getElementById("aiPatient").innerText =
-            "Patient ID: " + (data.patient_id ?? "-");
+            "Patient ID: " + (action.patient_id ?? "-");
 
         document.getElementById("aiDoctor").innerText =
-            "Doctor ID: " + (data.doctor_id ?? "-");
+            "Doctor ID: " + (action.doctor_id ?? "-");
 
         const rewardEl = document.getElementById("aiReward");
-        rewardEl.innerText = "Reward: " + (data.reward ?? "-");
+        rewardEl.innerText = "Reward: " + (stepData.reward ?? "-");
 
-        if (data.reward > 0) rewardEl.style.color = "#10b981";
-        else if (data.reward < 0) rewardEl.style.color = "#ef4444";
+        if (stepData.reward > 0) rewardEl.style.color = "#10b981";
+        else if (stepData.reward < 0) rewardEl.style.color = "#ef4444";
         else rewardEl.style.color = "#94a3b8";
 
         document.getElementById("aiFeedback").innerText =
-            "Feedback: " + (data.feedback || "-");
+            "Feedback: " + (stepData.observation?.step_feedback || "-");
 
         const sourceEl = document.getElementById("aiSource");
-        if (sourceEl) sourceEl.innerText = "Source: " + (data.source || "llm");
-
-        document.getElementById("status").className = "status-box";
+        if (sourceEl) sourceEl.innerText = "Source: " + source;
 
     } catch (error) {
         document.getElementById("status").className = "status-box error";
@@ -863,7 +883,6 @@ async function runLLMStep() {
         if (llmBtn) llmBtn.disabled = false;
     }
 }
-</script>
 </script>
         <style>
         .reward-animation {
@@ -1174,15 +1193,13 @@ function updateEpisodeSummary(obs, state = null) {
     const seenFallback = doctors.reduce((sum, doctor) => sum + Number(doctor.patients_seen || 0), 0);
     const arrivedFallback = seenFallback + Number(obs?.queue_length || 0);
 
-    const finalScore = (state?.final_score ?? (obs?.done ? obs?.reward : null));
+    const finalScore = (state?.final_score ?? (obs?.done ? obs?.reward : 0));
     const totalSeen = state?.total_patients_seen ?? seenFallback;
     const totalArrived = state?.total_patients_arrived ?? arrivedFallback;
     const avgWait = state?.avg_wait_all ?? obs?.avg_wait_minutes ?? 0;
     const criticalDeaths = state?.critical_deaths ?? 0;
 
-    document.getElementById("summary-final").innerText = finalScore === null || finalScore === undefined
-        ? "-"
-        : Number(finalScore).toFixed(3);
+    document.getElementById("summary-final").innerText = Number(finalScore || 0).toFixed(3);
     document.getElementById("summary-seen").innerText = Number(totalSeen || 0);
     document.getElementById("summary-arrived").innerText = Number(totalArrived || 0);
     document.getElementById("summary-wait").innerText = `${Number(avgWait || 0).toFixed(1)}m`;
