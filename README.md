@@ -97,7 +97,8 @@ python -m server.app
 python scripts/benchmark_medflow.py --episodes 3
 python scripts/greedy_policy.py --episodes 3
 python scripts/train_qlearning.py --episodes 60 --eval-episodes 2 --outdir outputs/evals
-python train/train_hftrl.py --out hftrl_colab.md
+python -m train.train_hftrl --model sshleifer/tiny-gpt2 --epochs 1 --outdir outputs/evals
+python -m train.train_hftrl --write-colab --out hftrl_colab.md
 python -m train.train_unsloth --env app.env --episodes 1 --demo
 ```
 
@@ -153,6 +154,19 @@ Caption: Mean TD error squared (loss proxy) per training episode.
 ![Trained vs random policy](outputs/evals/training_policy_compare.png)
 
 Caption: Average total reward comparison on the same task set after training.
+
+### HF-TRL Training Evidence
+
+The following artifacts are generated from the HF-TRL training script:
+
+```bash
+python -m train.train_hftrl --model sshleifer/tiny-gpt2 --epochs 1 --outdir outputs/evals
+```
+
+- Training loss curve: `outputs/evals/trl_loss_curve.png`
+- Policy reward curve: `outputs/evals/trl_reward_curve.png`
+- Training metrics CSV: `outputs/evals/trl_training_metrics.csv`
+- Training summary: `outputs/evals/trl_summary.json`
 
 ## Reward Graph
 
