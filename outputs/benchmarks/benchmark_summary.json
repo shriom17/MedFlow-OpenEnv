@@ -1,0 +1,90 @@
+{
+  "policies": {
+    "greedy": {
+      "avg_final_score": 0.283,
+      "avg_total_reward": -3.033,
+      "avg_steps": 40,
+      "success_rate": 1.0
+    },
+    "random": {
+      "avg_final_score": 0.25,
+      "avg_total_reward": -9.867,
+      "avg_steps": 40,
+      "success_rate": 1.0
+    }
+  },
+  "rows": [
+    {
+      "task_id": "easy_small_clinic",
+      "policy": "greedy",
+      "final_score": 0.2,
+      "total_reward": -2.05,
+      "steps": 20,
+      "total_seen": 0,
+      "total_arrived": 5,
+      "avg_wait_all": 2507.75,
+      "critical_deaths": 2,
+      "submitted": true
+    },
+    {
+      "task_id": "easy_small_clinic",
+      "policy": "random",
+      "final_score": 0.2,
+      "total_reward": -2.6,
+      "steps": 20,
+      "total_seen": 0,
+      "total_arrived": 5,
+      "avg_wait_all": 2507.75,
+      "critical_deaths": 2,
+      "submitted": true
+    },
+    {
+      "task_id": "medium_busy_opd",
+      "policy": "greedy",
+      "final_score": 0.4,
+      "total_reward": -1.7,
+      "steps": 40,
+      "total_seen": 0,
+      "total_arrived": 13,
+      "avg_wait_all": 1674.83,
+      "critical_deaths": 2,
+      "submitted": true
+    },
+    {
+      "task_id": "medium_busy_opd",
+      "policy": "random",
+      "final_score": 0.4,
+      "total_reward": -12.55,
+      "steps": 40,
+      "total_seen": 0,
+      "total_arrived": 13,
+      "avg_wait_all": 1675.5,
+      "critical_deaths": 1,
+      "submitted": true
+    },
+    {
+      "task_id": "hard_mass_casualty",
+      "policy": "greedy",
+      "final_score": 0.25,
+      "total_reward": -5.35,
+      "steps": 60,
+      "total_seen": 0,
+      "total_arrived": 18,
+      "avg_wait_all": 1257.88,
+      "critical_deaths": 7,
+      "submitted": true
+    },
+    {
+      "task_id": "hard_mass_casualty",
+      "policy": "random",
+      "final_score": 0.15,
+      "total_reward": -14.45,
+      "steps": 60,
+      "total_seen": 0,
+      "total_arrived": 18,
+      "avg_wait_all": 7.0,
+      "critical_deaths": 5,
+      "submitted": true
+    }
+  ]
+}

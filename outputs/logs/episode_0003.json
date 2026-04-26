@@ -1,0 +1,120 @@
+{
+  "episode": 3,
+  "total_reward": 4.9,
+  "steps": [
+    {
+      "action": "gather_history",
+      "reward": 0.6,
+      "obs": {
+        "patient_id": 9212,
+        "complaint": "fatigue",
+        "step": 1,
+        "notes": [],
+        "tests_ordered": []
+      }
+    },
+    {
+      "action": "order_blood_test",
+      "reward": 1.0,
+      "obs": {
+        "patient_id": 9212,
+        "complaint": "fatigue",
+        "step": 2,
+        "notes": [],
+        "tests_ordered": [
+          "order_blood_test"
+        ]
+      }
+    },
+    {
+      "action": "order_xray",
+      "reward": 1.0,
+      "obs": {
+        "patient_id": 9212,
+        "complaint": "fatigue",
+        "step": 3,
+        "notes": [],
+        "tests_ordered": [
+          "order_blood_test",
+          "order_xray"
+        ]
+      }
+    },
+    {
+      "action": "schedule_followup",
+      "reward": 0.8,
+      "obs": {
+        "patient_id": 9212,
+        "complaint": "fatigue",
+        "step": 4,
+        "notes": [],
+        "tests_ordered": [
+          "order_blood_test",
+          "order_xray"
+        ]
+      }
+    },
+    {
+      "action": "prescribe_medication",
+      "reward": 1.5,
+      "obs": {
+        "patient_id": 9212,
+        "complaint": "fatigue",
+        "step": 5,
+        "notes": [],
+        "tests_ordered": [
+          "order_blood_test",
+          "order_xray"
+        ]
+      }
+    },
+    {
+      "action": "consult_specialist",
+      "reward": 0.0,
+      "obs": {
+        "patient_id": 9212,
+        "complaint": "fatigue",
+        "step": 6,
+        "notes": [],
+        "tests_ordered": [
+          "order_blood_test",
+          "order_xray"
+        ]
+      }
+    },
+    {
+      "action": "consult_specialist",
+      "reward": 0.0,
+      "obs": {
+        "patient_id": 9212,
+        "complaint": "fatigue",
+        "step": 7,
+        "notes": [],
+        "tests_ordered": [
+          "order_blood_test",
+          "order_xray"
+        ]
+      }
+    },
+    {
+      "action": "consult_specialist",
+      "reward": 0.0,
+      "obs": {
+        "patient_id": 9212,
+        "complaint": "fatigue",
+        "step": 8,
+        "notes": [],
+        "tests_ordered": [
+          "order_blood_test",
+          "order_xray"
+        ]
+      }
+    }
+  ],
+  "meta": {
+    "total_reward": 4.9,
+    "num_steps": 8,
+    "efficiency": 0.6125,
+    "safety_score": 1.0
+  }
+}

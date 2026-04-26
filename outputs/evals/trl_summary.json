@@ -1,0 +1,16 @@
+{
+  "trainer": "hf-trl-sft",
+  "model": "sshleifer/tiny-gpt2",
+  "dataset_rows": 120,
+  "epochs": 0.1,
+  "batch_size": 1,
+  "learning_rate": 2e-05,
+  "loss_points": 12,
+  "reward_episodes": 3,
+  "reward_avg": -13.124999999999998,
+  "artifacts": {
+    "loss_curve": "outputs/evals\\trl_loss_curve.png",
+    "reward_curve": "outputs/evals\\trl_reward_curve.png",
+    "metrics_csv": "outputs/evals\\trl_training_metrics.csv"
+  }
+}

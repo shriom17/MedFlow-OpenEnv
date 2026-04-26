@@ -1,0 +1,252 @@
+{
+  "episode": 1,
+  "total_reward": -2.05,
+  "steps": [
+    {
+      "action": "assign(patient_id=2,doctor_id=1)",
+      "reward": 0.15,
+      "obs": {
+        "done": false,
+        "reward": 0.15,
+        "step_feedback": "Assigned Priya Sen (emergency, severity 9) \u2192 Dr. A. Roy (General). Wait was 2 min. Treatment finishes in 8 min.",
+        "queue_length": 4,
+        "beds_available": 3,
+        "current_time_minutes": 2
+      }
+    },
+    {
+      "action": "assign(patient_id=5,doctor_id=2)",
+      "reward": 0.1,
+      "obs": {
+        "done": false,
+        "reward": 0.1,
+        "step_feedback": "Assigned Sanjay Paul (urgent, severity 7) \u2192 Dr. S. Ghosh (General). Wait was 4 min. Treatment finishes in 8 min.",
+        "queue_length": 3,
+        "beds_available": 2,
+        "current_time_minutes": 4
+      }
+    },
+    {
+      "action": "prioritize(patient_id=4)",
+      "reward": 0.0,
+      "obs": {
+        "done": false,
+        "reward": 0.0,
+        "step_feedback": "Patient Meena Ghosh boosted to emergency priority and moved to front of queue.",
+        "queue_length": 3,
+        "beds_available": 2,
+        "current_time_minutes": 6
+      }
+    },
+    {
+      "action": "prioritize(patient_id=4)",
+      "reward": -0.15,
+      "obs": {
+        "done": false,
+        "reward": -0.15,
+        "step_feedback": "Patient Meena Ghosh boosted to emergency priority and moved to front of queue.",
+        "queue_length": 3,
+        "beds_available": 2,
+        "current_time_minutes": 8
+      }
+    },
+    {
+      "action": "prioritize(patient_id=4)",
+      "reward": -0.15,
+      "obs": {
+        "done": false,
+        "reward": -0.15,
+        "step_feedback": "Patient Meena Ghosh boosted to emergency priority and moved to front of queue.",
+        "queue_length": 3,
+        "beds_available": 2,
+        "current_time_minutes": 10
+      }
+    },
+    {
+      "action": "assign(patient_id=4,doctor_id=1)",
+      "reward": -0.15,
+      "obs": {
+        "done": false,
+        "reward": -0.15,
+        "step_feedback": "Assigned Meena Ghosh (emergency, severity 6) \u2192 Dr. A. Roy (General). Wait was 10011 min. Treatment finishes in 8 min.",
+        "queue_length": 2,
+        "beds_available": 1,
+        "current_time_minutes": 12
+      }
+    },
+    {
+      "action": "assign(patient_id=1,doctor_id=2)",
+      "reward": 0.05,
+      "obs": {
+        "done": false,
+        "reward": 0.05,
+        "step_feedback": "Assigned Rahul Das (normal, severity 3) \u2192 Dr. S. Ghosh (General). Wait was 14 min. Treatment finishes in 8 min.",
+        "queue_length": 1,
+        "beds_available": 0,
+        "current_time_minutes": 14
+      }
+    },
+    {
+      "action": "prioritize(patient_id=3)",
+      "reward": 0.0,
+      "obs": {
+        "done": false,
+        "reward": 0.0,
+        "step_feedback": "Patient Amit Roy boosted to emergency priority and moved to front of queue.",
+        "queue_length": 1,
+        "beds_available": 0,
+        "current_time_minutes": 16
+      }
+    },
+    {
+      "action": "prioritize(patient_id=3)",
+      "reward": -0.15,
+      "obs": {
+        "done": false,
+        "reward": -0.15,
+        "step_feedback": "Patient Amit Roy boosted to emergency priority and moved to front of queue.",
+        "queue_length": 1,
+        "beds_available": 0,
+        "current_time_minutes": 18
+      }
+    },
+    {
+      "action": "prioritize(patient_id=3)",
+      "reward": -0.15,
+      "obs": {
+        "done": false,
+        "reward": -0.15,
+        "step_feedback": "Patient Amit Roy boosted to emergency priority and moved to front of queue.",
+        "queue_length": 1,
+        "beds_available": 0,
+        "current_time_minutes": 20
+      }
+    },
+    {
+      "action": "assign(patient_id=3,doctor_id=1)",
+      "reward": -0.2,
+      "obs": {
+        "done": false,
+        "reward": -0.2,
+        "step_feedback": "No beds available. Discharge a patient first.",
+        "queue_length": 1,
+        "beds_available": 0,
+        "current_time_minutes": 22
+      }
+    },
+    {
+      "action": "assign(patient_id=3,doctor_id=1)",
+      "reward": -0.2,
+      "obs": {
+        "done": false,
+        "reward": -0.2,
+        "step_feedback": "No beds available. Discharge a patient first.",
+        "queue_length": 1,
+        "beds_available": 0,
+        "current_time_minutes": 24
+      }
+    },
+    {
+      "action": "assign(patient_id=3,doctor_id=1)",
+      "reward": -0.2,
+      "obs": {
+        "done": false,
+        "reward": -0.2,
+        "step_feedback": "No beds available. Discharge a patient first.",
+        "queue_length": 1,
+        "beds_available": 0,
+        "current_time_minutes": 26
+      }
+    },
+    {
+      "action": "assign(patient_id=3,doctor_id=1)",
+      "reward": -0.2,
+      "obs": {
+        "done": false,
+        "reward": -0.2,
+        "step_feedback": "No beds available. Discharge a patient first.",
+        "queue_length": 1,
+        "beds_available": 0,
+        "current_time_minutes": 28
+      }
+    },
+    {
+      "action": "assign(patient_id=3,doctor_id=1)",
+      "reward": -0.2,
+      "obs": {
+        "done": false,
+        "reward": -0.2,
+        "step_feedback": "No beds available. Discharge a patient first.",
+        "queue_length": 1,
+        "beds_available": 0,
+        "current_time_minutes": 30
+      }
+    },
+    {
+      "action": "assign(patient_id=3,doctor_id=1)",
+      "reward": -0.2,
+      "obs": {
+        "done": false,
+        "reward": -0.2,
+        "step_feedback": "No beds available. Discharge a patient first.",
+        "queue_length": 1,
+        "beds_available": 0,
+        "current_time_minutes": 32
+      }
+    },
+    {
+      "action": "assign(patient_id=3,doctor_id=1)",
+      "reward": -0.2,
+      "obs": {
+        "done": false,
+        "reward": -0.2,
+        "step_feedback": "No beds available. Discharge a patient first.",
+        "queue_length": 1,
+        "beds_available": 0,
+        "current_time_minutes": 34
+      }
+    },
+    {
+      "action": "assign(patient_id=3,doctor_id=1)",
+      "reward": -0.2,
+      "obs": {
+        "done": false,
+        "reward": -0.2,
+        "step_feedback": "No beds available. Discharge a patient first.",
+        "queue_length": 1,
+        "beds_available": 0,
+        "current_time_minutes": 36
+      }
+    },
+    {
+      "action": "assign(patient_id=3,doctor_id=1)",
+      "reward": -0.2,
+      "obs": {
+        "done": false,
+        "reward": -0.2,
+        "step_feedback": "No beds available. Discharge a patient first.",
+        "queue_length": 1,
+        "beds_available": 0,
+        "current_time_minutes": 38
+      }
+    },
+    {
+      "action": "assign(patient_id=3,doctor_id=1)",
+      "reward": 0.2,
+      "obs": {
+        "done": true,
+        "reward": 0.2,
+        "step_feedback": "No beds available. Discharge a patient first.\n\nEpisode ended. Final score: 0.200. Seen: 0/5, avg wait: 999.0 min, critical deaths: 0.",
+        "queue_length": 1,
+        "beds_available": 0,
+        "current_time_minutes": 40
+      }
+    }
+  ],
+  "meta": {
+    "total_reward": -2.0500000000000003,
+    "num_steps": 20,
+    "efficiency": -0.10250000000000001,
+    "safety_score": 1.0
+  }
+}

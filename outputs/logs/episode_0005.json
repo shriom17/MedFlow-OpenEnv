@@ -1,0 +1,114 @@
+{
+  "episode": 5,
+  "total_reward": 4.887869202151119,
+  "steps": [
+    {
+      "action": "gather_history",
+      "reward": 0.48614439946861066,
+      "obs": {
+        "patient_id": 1267,
+        "complaint": "chest pain",
+        "step": 1,
+        "notes": [],
+        "tests_ordered": []
+      }
+    },
+    {
+      "action": "order_blood_test",
+      "reward": 1.008032846252104,
+      "obs": {
+        "patient_id": 1267,
+        "complaint": "chest pain",
+        "step": 2,
+        "notes": [],
+        "tests_ordered": [
+          "order_blood_test"
+        ]
+      }
+    },
+    {
+      "action": "order_xray",
+      "reward": 0.9358965342547926,
+      "obs": {
+        "patient_id": 1267,
+        "complaint": "chest pain",
+        "step": 3,
+        "notes": [],
+        "tests_ordered": [
+          "order_blood_test",
+          "order_xray"
+        ]
+      }
+    },
+    {
+      "action": "schedule_followup",
+      "reward": 0.8861743666034578,
+      "obs": {
+        "patient_id": 1267,
+        "complaint": "chest pain",
+        "step": 4,
+        "notes": [],
+        "tests_ordered": [
+          "order_blood_test",
+          "order_xray"
+        ]
+      }
+    },
+    {
+      "action": "prescribe_medication",
+      "reward": 1.4332158939006987,
+      "obs": {
+        "patient_id": 1267,
+        "complaint": "chest pain",
+        "step": 5,
+        "notes": [],
+        "tests_ordered": [
+          "order_blood_test",
+          "order_xray"
+        ]
+      }
+    },
+    {
+      "action": "consult_specialist",
+      "reward": 0.15534224233291724,
+      "obs": {
+        "patient_id": 1267,
+        "complaint": "chest pain",
+        "step": 6,
+        "notes": [],
+        "tests_ordered": [
+          "order_blood_test",
+          "order_xray"
+        ]
+      }
+    },
+    {
+      "action": "consult_specialist",
+      "reward": 0.07131016723009503,
+      "obs": {
+        "patient_id": 1267,
+        "complaint": "chest pain",
+        "step": 7,
+        "notes": [],
+        "tests_ordered": [
+          "order_blood_test",
+          "order_xray"
+        ]
+      }
+    },
+    {
+      "action": "consult_specialist",
+      "reward": -0.08824724789155676,
+      "obs": {
+        "patient_id": 1267,
+        "complaint": "chest pain",
+        "step": 8,
+        "notes": [],
+        "tests_ordered": [
+          "order_blood_test",
+          "order_xray"
+        ]
+      }
+    }
+  ]
+}
