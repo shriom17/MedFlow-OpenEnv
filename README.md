@@ -1,5 +1,15 @@
 # 🏥 MedFlow-OpenEnv
 
+---
+title: MedFlow OpenEnv
+emoji: 🏥
+colorFrom: green
+colorTo: blue
+sdk: docker
+app_file: app.py
+pinned: false
+---
+
 > 🚀 **Agentic Patient Prioritization Environment for AI Systems**
 
 > This environment teaches AI agents how to make life-critical decisions under constraints — just like real hospital triage systems.
