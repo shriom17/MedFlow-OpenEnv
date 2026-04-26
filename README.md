@@ -1,6 +1,7 @@
 # 🏥 MedFlow-OpenEnv
 
 ---
+---
 title: MedFlow OpenEnv
 emoji: 🏥
 colorFrom: green
@@ -8,6 +9,7 @@ colorTo: blue
 sdk: docker
 pinned: false
 license: mit
+app_port: 7860
 short_description: Agentic Patient Prioritization System for AI agents
 ---
 
