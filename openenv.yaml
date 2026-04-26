@@ -87,3 +87,12 @@ max_steps:
   hard_mass_casualty: 60
 docker_port: 7860
 hf_space: "shriom23/MedFlow-OpenEnv"
+artifacts:
+  training_notebook: "Training.ipynb"
+  reward_curve: "outputs/reward_curve.png"
+  loss_curve: "outputs/loss_curve.png"
+  evaluation_csv: "outputs/eval_greedy.csv"
+
+links:
+  github: "https://github.com/shriom17/MedFlow-OpenEnv"
+  hf_space: "https://huggingface.co/spaces/shriom23/MedFlow-OpenEnv"

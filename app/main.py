@@ -37,7 +37,8 @@ else:
     app = FastAPI(title="MedFlow OpenEnv", version="1.0.0")
 
 LOGS_DIR = Path.cwd() / "outputs" / "logs"
-
+env = HospitalQueueEnvironment()
+obs = env.reset(task_id="easy_small_clinic")
 
 def _utc_now_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
@@ -63,6 +64,8 @@ Rules:
 - Prioritize emergency
 - Assign free doctors
 - Avoid waiting if possible
+
+Return ONLY valid JSON. Do NOT explain.
 """
 
 class Action:
@@ -77,8 +80,9 @@ def get_action_from_llm(obs):
 
     try:
         response = client.text_generation(
-            prompt,
-            max_new_tokens=100
+        prompt,
+        max_new_tokens=100,
+        timeout=10
         )
 
         start = response.find("{")
@@ -95,7 +99,8 @@ def get_action_from_llm(obs):
             data.get("doctor_id")
         )
 
-    except:
+    except Exception as e:
+        print("LLM error:", e)
         return Action("wait")
 
 def _ok(data: dict) -> dict:
@@ -300,12 +305,13 @@ def get_log(name: str) -> dict:
     return _ok({"log": data})
 
 @app.post("/llm-step")
-def llm_step(payload: dict) -> dict:
-    observation = payload.get("observation")
-    if not isinstance(observation, dict):
-        raise HTTPException(status_code=400, detail="Request body must include an 'observation' object")
+def llm_step(payload: dict = {}) -> dict:
+    global env, obs
+
+    observation = asdict(obs)
 
     llm_action = get_action_from_llm(observation)
+
     allowed_actions = {"assign", "discharge", "prioritize", "wait"}
     action_type = llm_action.action_type if llm_action.action_type in allowed_actions else "wait"
 
@@ -325,53 +331,38 @@ def llm_step(payload: dict) -> dict:
     elif action_type == "wait":
         patient_id, doctor_id = None, None
 
-    # If LLM suggests 'wait' (or failed), compute a simple heuristic on the dict observation
-    source = "llm"
-    if action_type == "wait":
-        waiting = observation.get("waiting_patients", []) or []
-        doctors = observation.get("doctors", []) or []
-        free_docs = [d for d in doctors if not (d.get("busy") if isinstance(d, dict) else False)]
-
-        if waiting and free_docs:
-            priority_rank = {"emergency": 0, "urgent": 1, "normal": 2}
-            patient = sorted(
-                waiting,
-                key=lambda p: (
-                    priority_rank.get(p.get("priority", "normal"), 3),
-                    -int(p.get("severity_score", 0)),
-                    -int(p.get("wait_minutes", 0)),
-                    int(p.get("id", 0)),
-                ),
-            )[0]
-            required = patient.get("required_specialization")
-            matching = [d for d in free_docs if d.get("specialization") == required]
-            general = [d for d in free_docs if d.get("specialization") == "General"]
-            doctor = (matching or general or free_docs)[0]
-            action_type = "assign"
-            patient_id = int(patient.get("id"))
-            doctor_id = int(doctor.get("id"))
-            source = "heuristic"
-        elif waiting:
-            patient = sorted(
-                waiting,
-                key=lambda p: (
-                    0 if p.get("priority") == "emergency" else 1 if p.get("priority") == "urgent" else 2,
-                    -int(p.get("wait_minutes", 0)),
-                    int(p.get("id", 0)),
-                ),
-            )[0]
-            action_type = "prioritize"
-            patient_id = int(patient.get("id"))
-            doctor_id = None
-            source = "heuristic"
-
-    return _ok(
-        {
-            "action": {
-                "action_type": action_type,
-                "patient_id": patient_id,
-                "doctor_id": doctor_id,
-            },
-            "source": source,
-        }
+    action = HospitalAction(
+        action_type=action_type,
+        patient_id=patient_id,
+        doctor_id=doctor_id,
     )
+
+    obs = env.step(action)
+
+    return {
+    "success": True,
+    "action_type": action_type,
+    "patient_id": patient_id,
+    "doctor_id": doctor_id,
+    "feedback": val(obs, "step_feedback", ""),
+    "reward": val(obs, "reward", 0),
+    "done": val(obs, "done", False),
+    "queue_length": val(obs, "queue_length", 0),
+    "beds_available": val(obs, "beds_available", 0),
+}
+@app.post("/reset-env")
+def reset_env(payload: dict):
+    global env, obs
+
+    task_id = payload.get("task_id", "easy_small_clinic")
+
+    if task_id not in ALL_TASKS:
+        raise HTTPException(status_code=400, detail="Invalid task_id")
+
+    env = HospitalQueueEnvironment()
+    obs = env.reset(task_id=task_id)
+
+    return _ok({
+        "task_id": task_id,
+        "message": "Environment reset successful"
+    })
