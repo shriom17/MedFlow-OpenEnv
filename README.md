@@ -10,7 +10,7 @@ app_port: 7860
 short_description: Agentic Patient Prioritization System for AI agents
 ---
 
-> 🚀 **Agentic Patient Prioritization Environment for AI Systems**
+> 🚀 **Real-time hospital triage where AI decisions can save lives**
 
 > This environment teaches AI agents how to make life-critical decisions under constraints — just like real hospital triage systems.
 
@@ -109,7 +109,7 @@ We compare two policies:
 | Smart Policy | +0.05 |
 
 ✅ Smart policy consistently outperforms random baseline
-
+> ⚡ Same action can give different rewards depending on timing — just like real-world decisions.
 👉 This proves the environment supports **meaningful learning**
 
 ---
@@ -149,15 +149,14 @@ We compare two policies:
 
 ## 📓 Training Notebook
 
-👉 Colab Notebook:  
-
-- https://colab.research.google.com/drive/1qNCzeWGgPpmK24Q8BlZpGn08Wm_dgtQk?usp=sharing
+👉 **Colab Notebook:**  
+[Open in Colab](https://colab.research.google.com/drive/1qNCzeWGgPpmK24Q8BlZpGn08Wm_dgtQk?usp=sharing)
 
 ---
 
 ## 🎥 Demo Video
 
-👉 https://youtu.be/Y8rlv3TbmlE?si=d7mc2OUle9TF3upk
+👉 [YouTube Demo Video](https://youtu.be/Y8rlv3TbmlE?si=d7mc2OUle9TF3upk)
 
 ---
 
@@ -189,3 +188,10 @@ MedFlow goes beyond simple simulations:
 ```bash
 pip install -r requirements.txt
 python -m server.app
+```
+
+---
+
+## 🧠 Key Insight
+
+> 🚀 MedFlow shows how AI can learn to make critical decisions under real-world constraints.
