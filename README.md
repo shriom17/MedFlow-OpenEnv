@@ -150,8 +150,8 @@ We compare two policies:
 ## 📓 Training Notebook
 
 👉 Colab Notebook:  
-<ADD YOUR COLAB LINK HERE>
 
+https://colab.research.google.com/drive/1qNCzeWGgPpmK24Q8BlZpGn08Wm_dgtQk?usp=sharing
 ---
 
 ## 🎥 Demo Video
