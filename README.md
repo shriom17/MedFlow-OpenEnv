@@ -156,7 +156,7 @@ https://colab.research.google.com/drive/1qNCzeWGgPpmK24Q8BlZpGn08Wm_dgtQk?usp=sh
 
 ## 🎥 Demo Video
 
-👉 https://youtu.be/LiL4BYJvFxs
+👉 https://youtu.be/Y8rlv3TbmlE?si=d7mc2OUle9TF3upk
 
 ---
 
