@@ -1,6 +1,3 @@
-# 🏥 MedFlow-OpenEnv
-
----
 ---
 title: MedFlow OpenEnv
 emoji: 🏥
