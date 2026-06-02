@@ -419,7 +419,7 @@ python -m train.train_hftrl --model sshleifer/tiny-gpt2 --epochs 1 --outdir outp
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Train MedFlow policy with HF-TRL")
     parser.add_argument("--model", type=str, default="sshleifer/tiny-gpt2")
-    parser.add_argument("--episodes-per-task", type=int, default=6)
+    parser.add_argument("--episodes-per-task", type=int, default=60)
     parser.add_argument("--eval-episodes", type=int, default=2)
     parser.add_argument("--epochs", type=float, default=1.0)
     parser.add_argument("--batch-size", type=int, default=2)

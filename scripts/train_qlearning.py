@@ -265,7 +265,7 @@ def save_plots(outdir: str, rewards: List[float], losses: List[float], trained_a
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Train a tabular Q-learning policy on MedFlow.")
-    parser.add_argument("--episodes", type=int, default=80)
+    parser.add_argument("--episodes", type=int, default=500)
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--alpha", type=float, default=0.2)
     parser.add_argument("--gamma", type=float, default=0.95)
