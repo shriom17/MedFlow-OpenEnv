@@ -306,9 +306,13 @@ def get_log(name: str) -> dict:
 
 @app.post("/llm-step")
 def llm_step(payload: dict = {}) -> dict:
-    global env, obs
+    global obs
 
-    observation = asdict(obs)
+    observation = None
+    if isinstance(payload, dict):
+        observation = payload.get("observation")
+    if not isinstance(observation, dict):
+        observation = asdict(obs)
 
     llm_action = get_action_from_llm(observation)
 
@@ -331,25 +335,13 @@ def llm_step(payload: dict = {}) -> dict:
     elif action_type == "wait":
         patient_id, doctor_id = None, None
 
-    action = HospitalAction(
-        action_type=action_type,
-        patient_id=patient_id,
-        doctor_id=doctor_id,
-    )
+    action_payload = {
+        "action_type": action_type,
+        "patient_id": patient_id,
+        "doctor_id": doctor_id,
+    }
 
-    obs = env.step(action)
-
-    return {
-    "success": True,
-    "action_type": action_type,
-    "patient_id": patient_id,
-    "doctor_id": doctor_id,
-    "feedback": val(obs, "step_feedback", ""),
-    "reward": val(obs, "reward", 0),
-    "done": val(obs, "done", False),
-    "queue_length": val(obs, "queue_length", 0),
-    "beds_available": val(obs, "beds_available", 0),
-}
+    return _ok({"action": action_payload, "source": "llm", "reason": "llm_suggestion"})
 @app.post("/reset-env")
 def reset_env(payload: dict):
     global env, obs

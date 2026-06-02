@@ -738,7 +738,7 @@
     </div>
         <section class="reward-animation">
             <h2>Reward Graph (Action-wise)</h2>
-            <p>Action table er reward data diye last 10 action er trend ekhane dekhabe.</p>
+            <p>Showing here, last 10 action trends in Graph</p>
 
             <div class="reward-graph-wrap">
                 <svg id="reward-graph" class="reward-graph" viewBox="0 0 100 100" preserveAspectRatio="none" role="img" aria-label="Action reward curve graph">
@@ -804,10 +804,14 @@ async function runLLMStep() {
             throw new Error(suggestData?.detail || suggestData?.error?.message || "LLM suggestion failed");
         }
 
-        let action = suggestData?.data?.action || {
-            action_type: suggestData?.action_type || "wait",
-            patient_id: suggestData?.patient_id ?? null,
-            doctor_id: suggestData?.doctor_id ?? null,
+        const fallbackActionType = suggestData?.data?.action_type ?? suggestData?.action_type ?? "wait";
+        const fallbackPatientId = suggestData?.data?.patient_id ?? suggestData?.patient_id ?? null;
+        const fallbackDoctorId = suggestData?.data?.doctor_id ?? suggestData?.doctor_id ?? null;
+
+        let action = suggestData?.data?.action || suggestData?.action || {
+            action_type: fallbackActionType,
+            patient_id: fallbackPatientId,
+            doctor_id: fallbackDoctorId,
         };
         let source = suggestData?.data?.source || suggestData?.source || "llm";
 
