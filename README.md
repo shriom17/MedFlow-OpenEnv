@@ -104,13 +104,19 @@ Agents trained in MedFlow learn to:
 We compare two policies:
 
 | Policy | Avg Reward |
-|--------|----------|
-| Random | -20 |
-| Smart Policy | +0.05 |
+|----------|----------|
+| Random Policy | -7.05 |
+| Trained Q-Learning Policy | +2.03 |
 
-✅ Smart policy consistently outperforms random baseline
-> ⚡ Same action can give different rewards depending on timing — just like real-world decisions.
-👉 This proves the environment supports **meaningful learning**
+✅ The trained policy consistently outperforms the random baseline.
+
+📈 Performance Improvement:
+- Reward Improvement: **+9.08 points**
+- Evaluated across **1,000 training episodes** and **30 evaluation episodes**
+
+> ⚡ The same action can produce different outcomes depending on patient severity, queue length, doctor availability, and timing — similar to real-world hospital operations.
+
+👉 These results demonstrate that the environment supports meaningful learning and policy optimization through reinforcement learning.
 
 ---
 
