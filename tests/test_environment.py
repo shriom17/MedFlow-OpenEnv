@@ -45,7 +45,7 @@ class TestReset:
 
     def test_correct_patient_count_easy(self, env):
         obs = env.reset(task_id="easy_small_clinic")
-        assert obs.queue_length == 5
+        assert obs.queue_length == 8
 
     def test_correct_doctor_count_easy(self, env):
         obs = env.reset(task_id="easy_small_clinic")

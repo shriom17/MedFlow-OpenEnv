@@ -122,6 +122,10 @@ class HospitalQueueEnvironment(Environment):
         progress: float,
     ) -> HospitalObservation:
         waiting = self._waiting()
+        next_arrival_in = (
+            min(a["arrival_minute"] for a in self._pending_arrivals) - self._sim_clock
+            if self._pending_arrivals else -1
+        )
         avg_wait = (
             sum(self._sim_clock - p.arrival_minute for p in waiting) / len(waiting)
             if waiting else 0.0
@@ -163,6 +167,8 @@ class HospitalQueueEnvironment(Environment):
             queue_length=len(waiting),
             avg_wait_minutes=round(avg_wait, 1),
             critical_untreated=critical_untreated,
+            pending_arrivals=len(self._pending_arrivals),
+            next_arrival_in_minutes=max(0, next_arrival_in),
             task_id=self._task.task_id,
             task_description=self._task.description,
             progress_score=round(progress, 3),

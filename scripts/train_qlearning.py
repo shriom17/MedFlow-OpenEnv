@@ -18,7 +18,7 @@ import random
 import sys
 from collections import defaultdict
 from pathlib import Path
-from typing import DefaultDict, Dict, Iterable, List, Sequence, Tuple
+from typing import Any, DefaultDict, Dict, Iterable, List, Sequence, Tuple
 
 import matplotlib.pyplot as plt
 
@@ -32,7 +32,7 @@ from app.models import HospitalAction, HospitalObservation
 
 
 ActionKey = Tuple[str, int | None, int | None]
-StateKey = Tuple[int, int, int, int, str, int]
+StateKey = Tuple[Any, ...]
 QTable = DefaultDict[StateKey, Dict[ActionKey, float]]
 
 
@@ -52,9 +52,54 @@ def encode_state(obs: HospitalObservation) -> StateKey:
         top = waiting[0]
         top_priority = str(top.get("priority", "none"))
         top_wait_bucket = min(int(top.get("wait_minutes", 0)) // 5, 12)
+        top_required_specialization = str(
+            top.get("required_specialization", "none")
+        )
     else:
         top_priority = "none"
         top_wait_bucket = 0
+        top_required_specialization = "none"
+
+    # Keep resource identity and treatment progress in the tabular state.
+    # Sorting makes the representation independent of dictionary/list order.
+    doctor_signature = tuple(
+        sorted(
+            (
+                int(d.get("id", -1)),
+                str(d.get("specialization", "unknown")),
+                bool(d.get("busy", False)),
+                int(d.get("current_patient_id") or -1),
+                min(int(d.get("free_in_minutes", 0)) // 2, 15),
+            )
+            for d in doctors
+        )
+    )
+    assigned_patient_ids = tuple(
+        sorted(
+            int(d["current_patient_id"])
+            for d in doctors
+            if d.get("current_patient_id") is not None
+        )
+    )
+    required_specializations = tuple(
+        sorted(
+            str(p.get("required_specialization", "unknown"))
+            for p in waiting
+        )
+    )
+    matching_free_doctors = sum(
+        1
+        for d in doctors
+        if not d.get("busy", False)
+        and any(
+            p.get("required_specialization") in (
+                d.get("specialization"),
+                "General",
+            )
+            or d.get("specialization") == "General"
+            for p in waiting
+        )
+    )
 
     return (
         queue_bucket,
@@ -63,6 +108,15 @@ def encode_state(obs: HospitalObservation) -> StateKey:
         beds_bucket,
         top_priority,
         top_wait_bucket,
+        top_required_specialization,
+        doctor_signature,
+        assigned_patient_ids,
+        required_specializations,
+        min(int(obs.pending_arrivals), 8),
+        min(max(int(obs.next_arrival_in_minutes), 0) // 5, 12)
+        if obs.next_arrival_in_minutes >= 0
+        else -1,
+        min(matching_free_doctors, 4),
     )
 
 

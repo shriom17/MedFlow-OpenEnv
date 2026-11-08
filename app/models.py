@@ -53,6 +53,8 @@ class HospitalObservation:
     queue_length: int = 0
     avg_wait_minutes: float = 0.0
     critical_untreated: int = 0
+    pending_arrivals: int = 0
+    next_arrival_in_minutes: int = -1
     task_id: str = ""
     task_description: str = ""
     progress_score: float = 0.0
