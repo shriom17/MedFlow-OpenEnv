@@ -189,6 +189,108 @@ MedFlow goes beyond simple simulations:
 
 ---
 
+## System Architecture
+
+MedFlow-OpenEnv is an in-memory hospital triage simulation exposed through a FastAPI application. The browser dashboard uses the OpenEnv environment routes for episode interaction and can request an AI-generated action through the Hugging Face inference client.
+
+<!-- mermaid-checked: no \n, no em-dash/en-dash, no {} in labels, subgraphs are id["label"], arrows are -->|"label"|, all subgraphs closed by end, ids unique -->
+```mermaid
+flowchart TD
+    subgraph ClientLayer["Client Layer"]
+        Browser["Browser dashboard"]
+    end
+    subgraph AppLayer["Application Layer"]
+        FastAPIApp["FastAPI application"]
+        OpenEnvAPI["OpenEnv environment API"]
+        LLMRoute["LLM suggestion route"]
+    end
+    subgraph DomainLayer["Simulation Domain"]
+        Environment["Hospital queue environment"]
+        TaskCatalog["Task catalog and graders"]
+        DomainModels["Action observation state models"]
+        Policies["Heuristic and RL policies"]
+    end
+    subgraph StorageLayer["Local Runtime Storage"]
+        MemoryState[("In-memory episode state")]
+        OutputFiles[("outputs logs and artifacts")]
+    end
+    subgraph ExternalLayer["External Services"]
+        HuggingFace["Hugging Face inference"]
+        OpenAICompat["OpenAI-compatible inference"]
+    end
+
+    Browser -->|"HTTP requests"| FastAPIApp
+    FastAPIApp -->|"environment requests"| OpenEnvAPI
+    OpenEnvAPI -->|"reset and step"| Environment
+    FastAPIApp -->|"AI action request"| LLMRoute
+    LLMRoute -->|"text generation"| HuggingFace
+    HuggingFace -->|"structured action text"| LLMRoute
+    Environment -->|"uses tasks and scoring"| TaskCatalog
+    Environment -->|"serializes observations"| DomainModels
+    Policies -->|"select actions"| Environment
+    Environment -->|"episode updates"| MemoryState
+    Environment -->|"logs and metrics"| OutputFiles
+    OpenAICompat -->|"CLI evaluation client"| Policies
+```
+
+### Application Workflow
+
+The following flow describes a typical interactive request. The browser first starts or resets an episode, optionally asks for an LLM suggestion, submits an action, and receives the updated observation and reward. The loop continues until the environment marks the episode complete.
+
+<!-- mermaid-checked: no \n, no em-dash/en-dash, no {} in labels, subgraphs are id["label"], arrows are -->|"label"|, all subgraphs closed by end, ids unique -->
+```mermaid
+flowchart LR
+    CBrowser["Browser dashboard"] -->|"load page"| CFastAPI["FastAPI routes"]
+    CFastAPI -->|"reset task"| COpenEnv["OpenEnv reset route"]
+    COpenEnv -->|"initialize episode"| CEnvironment["Hospital queue environment"]
+    CEnvironment -->|"observation"| CBrowser
+    CBrowser -->|"optional LLM suggestion"| CLLMRoute["LLM suggestion route"]
+    CLLMRoute -->|"prompt with observation"| CHF["Hugging Face inference"]
+    CHF -->|"candidate action"| CLLMRoute
+    CLLMRoute -->|"action suggestion"| CBrowser
+    CBrowser -->|"submit action"| CStep["OpenEnv step route"]
+    CStep -->|"typed action"| CEnvironment
+    CEnvironment -->|"advance clock and score"| CSimulation["Queue, doctors, beds, rewards"]
+    CSimulation -->|"updated observation"| CBrowser
+    CSimulation -->|"episode complete"| CResult["Final score and feedback"]
+    CResult -->|"display result"| CBrowser
+```
+
+### Component Responsibilities
+
+| Component | Responsibility |
+|---|---|
+| Browser dashboard | Presents tasks, queue state, doctors, beds, rewards, feedback, and action controls. |
+| FastAPI application | Serves the dashboard and exposes health, task, snapshot, recommendation, benchmark, LLM, reset, and log routes. |
+| OpenEnv environment API | Supplies the framework-managed reset and step interaction boundary. |
+| HospitalQueueEnvironment | Maintains the simulation clock and episode state, processes actions, advances arrivals and treatments, calculates rewards, and ends episodes. |
+| Task catalog and graders | Defines the easy, medium, and hard scenarios, patient and doctor data, resource limits, rubrics, and final scoring. |
+| Action, observation, and state models | Defines the typed data exchanged between agents, the environment, and API clients. |
+| LLM suggestion route | Builds a scheduling prompt, calls Hugging Face inference, validates the returned action shape, and falls back to wait for invalid output or errors. |
+| Heuristic and RL policies | Provide local action-selection and evaluation utilities for baseline and training workflows. |
+| In-memory episode state | Holds patients, doctors, beds, arrivals, clock values, and episode statistics for the running process. |
+| Local output artifacts | Stores JSON logs, plots, benchmark results, and evaluation files under `outputs/`. |
+
+### Technology Choices and Their Purpose
+
+| Technology | Purpose in this project |
+|---|---|
+| Python 3.10+ | Application, simulation, policies, evaluation, and training implementation. |
+| OpenEnv Core | Standardizes the environment server and typed reset/step interaction for AI agents. |
+| FastAPI and Uvicorn | Provides the HTTP API, dashboard hosting, health endpoints, and local server runtime. |
+| Dataclasses | Models actions, observations, state, patients, doctors, tasks, and scoring configuration without a persistent ORM. |
+| Hugging Face inference client | Generates optional natural-language-model action suggestions for the interactive UI. |
+| OpenAI-compatible client | Supports the separate CLI inference and baseline evaluation path through a configurable API base URL. |
+| Transformers, Datasets, Accelerate, and TRL | Support local model training and evaluation workflows in `train/`. |
+| Matplotlib | Produces reward and loss visualizations from training or evaluation outputs. |
+| Docker | Packages the FastAPI application and dashboard for deployment on port 7860. |
+
+### Implemented Versus Future Scope
+
+Implemented behavior includes the three simulation tasks, dynamic arrivals where configured, doctor specialization matching, bed limits, reward shaping, critical-death penalties, browser interaction, optional LLM suggestions, baseline policies, and local evaluation artifacts. The repository does not implement user authentication, a database, persistent application state, a production job queue, or external hospital information-system integrations; those should be treated as future extensions rather than current architecture components.
+
+---
+
 ## 🚀 How to Run
 
 ```bash
