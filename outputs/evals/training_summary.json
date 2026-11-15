@@ -9,8 +9,8 @@
   "gamma": 0.95,
   "epsilon_start": 0.35,
   "epsilon_end": 0.05,
-  "trained_policy_avg_reward": 2.0302,
-  "random_policy_avg_reward": -7.0445,
+  "trained_policy_avg_reward": -9.707,
+  "random_policy_avg_reward": -7.8616,
   "artifacts": {
     "csv": "outputs/evals\\training_metrics.csv",
     "reward_curve": "outputs/evals\\training_reward_curve.png",

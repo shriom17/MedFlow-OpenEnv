@@ -17,6 +17,7 @@ Final  — grader(episode_stats) on episode end
 from __future__ import annotations
 
 import copy
+import random
 import uuid
 from typing import Any, Dict, List, Optional
 
@@ -239,9 +240,12 @@ class HospitalQueueEnvironment(Environment):
         # pick task
         selected_task_id = task_id or "easy_small_clinic"
         self._current_task_id = selected_task_id
-        self._task = ALL_TASKS.get(selected_task_id)
-        if self._task is None:
+        base_task = ALL_TASKS.get(selected_task_id)
+        if base_task is None:
             raise ValueError("Invalid task_id")
+        self._task = copy.deepcopy(base_task)
+        if seed is not None:
+            self._randomize_episode(seed)
         self._rubric = self._task.rubric or default_rubric()
 
         # build patients
@@ -274,6 +278,21 @@ class HospitalQueueEnvironment(Environment):
             f"{self._beds_total} beds total."
         )
         return self._build_observation(0.0, False, feedback, 0.0)
+
+    def _randomize_episode(self, seed: int) -> None:
+        """Create a deterministic variation without changing the task catalogue."""
+        rng = random.Random(seed)
+        for patient in self._task.initial_patients + self._task.dynamic_arrivals:
+            patient["severity_score"] = max(
+                1, min(10, int(patient["severity_score"]) + rng.choice((-1, 0, 0, 1)))
+            )
+            if patient["priority"] == "emergency" and patient["severity_score"] < 7:
+                patient["severity_score"] = 7
+
+        for doctor in self._task.doctors:
+            doctor["treatment_minutes"] = max(
+                2, int(doctor["treatment_minutes"]) + rng.choice((-2, 0, 0, 2))
+            )
 
     def step(
         self,

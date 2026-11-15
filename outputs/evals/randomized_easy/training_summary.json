@@ -1,0 +1,19 @@
+{
+  "episodes": 3000,
+  "tasks": [
+    "easy_small_clinic"
+  ],
+  "randomized_episodes": true,
+  "alpha": 0.2,
+  "gamma": 0.95,
+  "epsilon_start": 0.35,
+  "epsilon_end": 0.05,
+  "trained_policy_avg_reward": 2.1981,
+  "random_policy_avg_reward": -1.4883,
+  "artifacts": {
+    "csv": "outputs\\evals\\randomized_easy\\training_metrics.csv",
+    "reward_curve": "outputs\\evals\\randomized_easy\\training_reward_curve.png",
+    "loss_curve": "outputs\\evals\\randomized_easy\\training_loss_curve.png",
+    "comparison": "outputs\\evals\\randomized_easy\\training_policy_compare.png"
+  }
+}

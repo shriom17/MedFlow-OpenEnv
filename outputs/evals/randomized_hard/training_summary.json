@@ -1,0 +1,19 @@
+{
+  "episodes": 2000,
+  "tasks": [
+    "hard_mass_casualty"
+  ],
+  "randomized_episodes": true,
+  "alpha": 0.2,
+  "gamma": 0.95,
+  "epsilon_start": 0.35,
+  "epsilon_end": 0.05,
+  "trained_policy_avg_reward": -43.8391,
+  "random_policy_avg_reward": -17.0035,
+  "artifacts": {
+    "csv": "outputs\\evals\\randomized_hard\\training_metrics.csv",
+    "reward_curve": "outputs\\evals\\randomized_hard\\training_reward_curve.png",
+    "loss_curve": "outputs\\evals\\randomized_hard\\training_loss_curve.png",
+    "comparison": "outputs\\evals\\randomized_hard\\training_policy_compare.png"
+  }
+}

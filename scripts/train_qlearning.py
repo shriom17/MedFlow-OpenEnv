@@ -102,6 +102,7 @@ def encode_state(obs: HospitalObservation) -> StateKey:
     )
 
     return (
+        obs.task_id,
         queue_bucket,
         critical_bucket,
         free_docs_bucket,
@@ -203,8 +204,9 @@ def run_episode(
     gamma: float,
     epsilon: float,
     rng: random.Random,
+    seed: int | None,
 ) -> Tuple[float, float, int]:
-    obs = env.reset(task_id=task_id)
+    obs = env.reset(task_id=task_id, seed=seed)
     done = False
     total_reward = 0.0
     total_loss = 0.0
@@ -248,14 +250,20 @@ def evaluate_policy(
     episodes_per_task: int,
     seed: int,
     random_policy: bool,
+    seed_offset: int | None = None,
 ) -> float:
     rng = random.Random(seed)
     env = HospitalQueueEnvironment()
     rewards: List[float] = []
 
+    episode_index = 0
     for task_id in tasks:
         for _ in range(episodes_per_task):
-            obs = env.reset(task_id=task_id)
+            episode_seed = (
+                seed_offset + episode_index if seed_offset is not None else None
+            )
+            obs = env.reset(task_id=task_id, seed=episode_seed)
+            episode_index += 1
             done = False
             total = 0.0
             while not done:
@@ -320,6 +328,8 @@ def save_plots(outdir: str, rewards: List[float], losses: List[float], trained_a
 def main() -> None:
     parser = argparse.ArgumentParser(description="Train a tabular Q-learning policy on MedFlow.")
     parser.add_argument("--episodes", type=int, default=500)
+    parser.add_argument("--task", choices=["easy_small_clinic", "medium_busy_opd", "hard_mass_casualty"], help="Train one task instead of the default multi-task cycle.")
+    parser.add_argument("--randomize", action="store_true", help="Use seeded episode variations during training and evaluation.")
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--alpha", type=float, default=0.2)
     parser.add_argument("--gamma", type=float, default=0.95)
@@ -331,7 +341,7 @@ def main() -> None:
 
     os.makedirs(args.outdir, exist_ok=True)
 
-    tasks = ["easy_small_clinic", "medium_busy_opd", "hard_mass_casualty"]
+    tasks = [args.task] if args.task else ["easy_small_clinic", "medium_busy_opd", "hard_mass_casualty"]
     env = HospitalQueueEnvironment()
     rng = random.Random(args.seed)
     q_table: QTable = defaultdict(dict)
@@ -353,6 +363,7 @@ def main() -> None:
             gamma=args.gamma,
             epsilon=epsilon,
             rng=rng,
+            seed=args.seed + episode - 1 if args.randomize else None,
         )
 
         rewards.append(total_reward)
@@ -374,6 +385,7 @@ def main() -> None:
         episodes_per_task=args.eval_episodes,
         seed=args.seed,
         random_policy=False,
+        seed_offset=args.seed + 100_000 if args.randomize else None,
     )
     random_avg = evaluate_policy(
         q_table=q_table,
@@ -381,6 +393,7 @@ def main() -> None:
         episodes_per_task=args.eval_episodes,
         seed=args.seed + 1,
         random_policy=True,
+        seed_offset=args.seed + 200_000 if args.randomize else None,
     )
 
     csv_path = os.path.join(args.outdir, "training_metrics.csv")
@@ -390,6 +403,7 @@ def main() -> None:
     summary = {
         "episodes": args.episodes,
         "tasks": tasks,
+        "randomized_episodes": args.randomize,
         "alpha": args.alpha,
         "gamma": args.gamma,
         "epsilon_start": args.epsilon_start,

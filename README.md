@@ -298,6 +298,28 @@ pip install -r requirements.txt
 python -m server.app
 ```
 
+### Training and validation workflow
+
+The Q-learning trainer supports reproducible fixed-task training and seeded
+episode variations. Train and evaluate one task first:
+
+```bash
+python scripts/train_qlearning.py --task easy_small_clinic --episodes 3000 --eval-episodes 100
+```
+
+Then test generalization across deterministic episode variations:
+
+```bash
+python scripts/train_qlearning.py --task easy_small_clinic --episodes 3000 --eval-episodes 100 --randomize
+```
+
+The evaluation seeds are disjoint from training seeds. Compare the trained
+policy against the random policy in `outputs/evals/*/training_summary.json`;
+the trained policy should beat random before expanding to multi-task training.
+The current multi-task Q-learning configuration is experimental and must not
+be presented as successful learning unless its evaluation beats both random
+and the existing greedy baseline.
+
 ---
 
 ## 🧠 Key Insight

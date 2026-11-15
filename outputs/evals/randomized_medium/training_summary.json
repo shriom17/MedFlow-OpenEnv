@@ -1,0 +1,19 @@
+{
+  "episodes": 2000,
+  "tasks": [
+    "medium_busy_opd"
+  ],
+  "randomized_episodes": true,
+  "alpha": 0.2,
+  "gamma": 0.95,
+  "epsilon_start": 0.35,
+  "epsilon_end": 0.05,
+  "trained_policy_avg_reward": -0.7738,
+  "random_policy_avg_reward": -7.8053,
+  "artifacts": {
+    "csv": "outputs\\evals\\randomized_medium\\training_metrics.csv",
+    "reward_curve": "outputs\\evals\\randomized_medium\\training_reward_curve.png",
+    "loss_curve": "outputs\\evals\\randomized_medium\\training_loss_curve.png",
+    "comparison": "outputs\\evals\\randomized_medium\\training_policy_compare.png"
+  }
+}
