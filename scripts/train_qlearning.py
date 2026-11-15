@@ -55,10 +55,12 @@ def encode_state(obs: HospitalObservation) -> StateKey:
         top_required_specialization = str(
             top.get("required_specialization", "none")
         )
+        top_severity_bucket = min(int(top.get("severity_score", 0)), 10)
     else:
         top_priority = "none"
         top_wait_bucket = 0
         top_required_specialization = "none"
+        top_severity_bucket = 0
 
     # Keep resource identity and treatment progress in the tabular state.
     # Sorting makes the representation independent of dictionary/list order.
@@ -110,6 +112,7 @@ def encode_state(obs: HospitalObservation) -> StateKey:
         top_priority,
         top_wait_bucket,
         top_required_specialization,
+        top_severity_bucket,
         doctor_signature,
         assigned_patient_ids,
         required_specializations,
@@ -140,20 +143,16 @@ def candidate_actions(obs: HospitalObservation) -> List[HospitalAction]:
     free_docs = [d for d in doctors if not d.get("busy", False)]
     busy_docs = [d for d in doctors if d.get("busy", False) and d.get("current_patient_id")]
 
-    actions: List[HospitalAction] = [HospitalAction(action_type="wait")]
-
-    # Prioritize top waiting patients.
-    for patient in waiting[:2]:
-        actions.append(HospitalAction(action_type="prioritize", patient_id=int(patient["id"])))
+    actions: List[HospitalAction] = []
 
     # Assign top patients to best matching doctors when available.
     if waiting and free_docs:
-        for patient in waiting[:2]:
+        for patient in waiting[:4]:
             req = patient.get("required_specialization")
             matching = [d for d in free_docs if d.get("specialization") == req]
             general = [d for d in free_docs if d.get("specialization") == "General"]
             preferred = matching or general or free_docs
-            for doctor in preferred[:2]:
+            for doctor in preferred:
                 actions.append(
                     HospitalAction(
                         action_type="assign",
@@ -162,12 +161,18 @@ def candidate_actions(obs: HospitalObservation) -> List[HospitalAction]:
                     )
                 )
 
+    # Prioritize only critical patients when no suitable assignment is available.
+    for patient in waiting[:4]:
+        if int(patient.get("severity_score", 0)) >= 9:
+            actions.append(HospitalAction(action_type="prioritize", patient_id=int(patient["id"])))
+
     # Consider discharging currently treated patients.
-    for doctor in busy_docs[:2]:
+    for doctor in busy_docs:
         pid = doctor.get("current_patient_id")
         if pid is not None:
             actions.append(HospitalAction(action_type="discharge", patient_id=int(pid)))
 
+    actions.append(HospitalAction(action_type="wait"))
     # Deduplicate while preserving order.
     unique: List[HospitalAction] = []
     seen: set[ActionKey] = set()
@@ -192,7 +197,13 @@ def select_action(
     if rng.random() < epsilon:
         return rng.choice(list(actions))
 
-    best = max(actions, key=lambda a: q_table[state].get(action_key(a), 0.0))
+    best = max(
+        actions,
+        key=lambda a: (
+            q_table[state].get(action_key(a), float("-inf")),
+            0 if a.action_type == "wait" else 1,
+        ),
+    )
     return best
 
 
@@ -224,10 +235,13 @@ def run_episode(
 
         next_state = encode_state(next_obs)
         next_actions = candidate_actions(next_obs)
+        known_next_values = [
+            q_table[next_state][action_key(a)]
+            for a in next_actions
+            if action_key(a) in q_table[next_state]
+        ]
         max_next = (
-            max(q_table[next_state].get(action_key(a), 0.0) for a in next_actions)
-            if (next_actions and not done)
-            else 0.0
+            max(known_next_values) if known_next_values and not done else 0.0
         )
 
         current_q = q_table[state].get(key, 0.0)

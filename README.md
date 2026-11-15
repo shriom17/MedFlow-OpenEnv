@@ -320,6 +320,15 @@ The current multi-task Q-learning configuration is experimental and must not
 be presented as successful learning unless its evaluation beats both random
 and the existing greedy baseline.
 
+The trainer uses assignment-first action ordering for unseen Q-table states.
+This matters because all initial Q-values are unknown and the environment has
+negative waiting penalties; choosing `wait` as the first tie would otherwise
+teach the agent to delay critical patients. After this fix, a 3,000-episode
+randomized hard-task run scored `-4.568` versus random `-5.400`, and a
+5,000-episode randomized multi-task run scored `0.034` versus random `-1.005`.
+These are validation runs, not fixed performance guarantees; repeat evaluation
+with unseen seeds before claiming generalization.
+
 ---
 
 ## 🧠 Key Insight

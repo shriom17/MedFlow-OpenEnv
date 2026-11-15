@@ -1,0 +1,21 @@
+{
+  "episodes": 5000,
+  "tasks": [
+    "easy_small_clinic",
+    "medium_busy_opd",
+    "hard_mass_casualty"
+  ],
+  "randomized_episodes": true,
+  "alpha": 0.2,
+  "gamma": 0.95,
+  "epsilon_start": 0.35,
+  "epsilon_end": 0.05,
+  "trained_policy_avg_reward": 0.0337,
+  "random_policy_avg_reward": -1.0046,
+  "artifacts": {
+    "csv": "outputs\\evals\\multitask_improved\\training_metrics.csv",
+    "reward_curve": "outputs\\evals\\multitask_improved\\training_reward_curve.png",
+    "loss_curve": "outputs\\evals\\multitask_improved\\training_loss_curve.png",
+    "comparison": "outputs\\evals\\multitask_improved\\training_policy_compare.png"
+  }
+}

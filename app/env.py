@@ -361,6 +361,18 @@ class HospitalQueueEnvironment(Environment):
         if action_valid:
             reward += self._rubric.score(rubric_state)
 
+        # Keep the learning signal aligned with the hard-task objective:
+        # leaving severe patients in the queue is worse than a neutral wait.
+        waiting = self._waiting()
+        critical_waiting = sum(
+            1 for patient in waiting if patient.severity_score >= 9
+        )
+        emergency_waiting = sum(
+            1 for patient in waiting if patient.priority == "emergency"
+        )
+        reward -= 0.08 * critical_waiting
+        reward -= 0.02 * emergency_waiting
+
         # ── check episode end ──
         all_tasks_done = (
             not self._pending_arrivals
@@ -457,7 +469,9 @@ class HospitalQueueEnvironment(Environment):
         reward = 0.0
         if patient.priority == "emergency":
             if wait_time <= 5:
-                reward += 0.15
+                reward += 0.25
+            elif wait_time > 15:
+                reward -= 0.25
             self._emergency_response_times.append(wait_time)
         elif patient.priority == "urgent":
             if wait_time <= 10:
@@ -469,6 +483,7 @@ class HospitalQueueEnvironment(Environment):
             reward -= 0.10
             spec_msg = f" ⚠️  Specialization mismatch ({patient.required_specialization} needed, {doctor.specialization} assigned)."
         else:
+            reward += 0.05
             spec_msg = ""
 
         feedback = (
@@ -488,11 +503,14 @@ class HospitalQueueEnvironment(Environment):
             return -0.05, f"Patient {pid} not found.", False
         if patient.status != "waiting":
             return -0.05, f"Patient {pid} is not waiting.", False
+        was_critical = patient.severity_score >= 9 or patient.priority == "emergency"
         # Bump to emergency priority AND set arrival to very early
         patient.priority = "emergency"
         patient.priority_boosted = True
         feedback = f"Patient {patient.name} boosted to emergency priority and moved to front of queue."
-        return 0.0, feedback, True
+        if was_critical:
+            return 0.08, feedback, True
+        return 0.01, feedback, True
 
     def _do_discharge(self, action: HospitalAction):
         pid = self._action_value(action, "patient_id")
