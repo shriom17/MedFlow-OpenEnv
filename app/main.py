@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import asdict
 from datetime import datetime, timezone
 from pathlib import Path
+import csv
 import json
 
 from fastapi import HTTPException, Request
@@ -37,6 +38,9 @@ else:
     app = FastAPI(title="MedFlow OpenEnv", version="1.0.0")
 
 LOGS_DIR = Path.cwd() / "outputs" / "logs"
+PROJECT_ROOT = Path(__file__).parent.parent
+TRAINING_METRICS_PATH = PROJECT_ROOT / "outputs" / "evals" / "training_metrics.csv"
+TRAINING_SUMMARY_PATH = PROJECT_ROOT / "outputs" / "evals" / "training_summary.json"
 env = HospitalQueueEnvironment()
 obs = env.reset(task_id="easy_small_clinic")
 
@@ -122,6 +126,89 @@ def _task_summary() -> list[dict]:
             }
         )
     return items
+
+
+def _performance_metrics() -> dict:
+    """Return persisted training metrics in a shape the dashboard can render."""
+    if not TRAINING_METRICS_PATH.exists():
+        return {
+            "available": False,
+            "message": "Training metrics are not available yet.",
+            "episodes": 0,
+            "overall": {},
+            "by_task": [],
+            "recent": [],
+            "summary": {},
+        }
+
+    rows = []
+    with TRAINING_METRICS_PATH.open(newline="", encoding="utf-8") as metrics_file:
+        for raw in csv.DictReader(metrics_file):
+            try:
+                rows.append(
+                    {
+                        "episode": int(raw["episode"]),
+                        "task_id": raw["task_id"],
+                        "steps": int(raw["steps"]),
+                        "epsilon": float(raw["epsilon"]),
+                        "total_reward": float(raw["total_reward"]),
+                        "mean_td_loss": float(raw["mean_td_loss"]),
+                    }
+                )
+            except (KeyError, TypeError, ValueError):
+                continue
+
+    if not rows:
+        return {
+            "available": False,
+            "message": "Training metrics are empty.",
+            "episodes": 0,
+            "overall": {},
+            "by_task": [],
+            "recent": [],
+            "summary": {},
+        }
+
+    def average(items: list[dict], key: str) -> float:
+        return round(sum(item[key] for item in items) / len(items), 4)
+
+    by_task = []
+    for task_id in dict.fromkeys(row["task_id"] for row in rows):
+        task_rows = [row for row in rows if row["task_id"] == task_id]
+        by_task.append(
+            {
+                "task_id": task_id,
+                "episodes": len(task_rows),
+                "avg_reward": average(task_rows, "total_reward"),
+                "best_reward": round(max(row["total_reward"] for row in task_rows), 4),
+                "last_reward": round(task_rows[-1]["total_reward"], 4),
+                "avg_loss": average(task_rows, "mean_td_loss"),
+                "avg_steps": round(average(task_rows, "steps"), 1),
+            }
+        )
+
+    summary = {}
+    if TRAINING_SUMMARY_PATH.exists():
+        try:
+            summary = json.loads(TRAINING_SUMMARY_PATH.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            summary = {}
+
+    return {
+        "available": True,
+        "message": "Loaded from outputs/evals/training_metrics.csv.",
+        "episodes": len(rows),
+        "overall": {
+            "avg_reward": average(rows, "total_reward"),
+            "best_reward": round(max(row["total_reward"] for row in rows), 4),
+            "avg_loss": average(rows, "mean_td_loss"),
+            "avg_steps": round(average(rows, "steps"), 1),
+            "latest_epsilon": round(rows[-1]["epsilon"], 4),
+        },
+        "by_task": by_task,
+        "recent": rows[-12:],
+        "summary": summary,
+    }
 
 
 def _heuristic_action_from_obs(obs: HospitalObservation) -> dict:
@@ -267,6 +354,11 @@ def api_benchmark_quick() -> dict:
             }
         )
     return _ok({"results": results, "note": "This endpoint returns a zero-step benchmark snapshot."})
+
+
+@app.get("/api/performance")
+def api_performance() -> dict:
+    return _ok(_performance_metrics())
 
 
 @app.get("/logs")

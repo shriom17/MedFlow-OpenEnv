@@ -233,6 +233,57 @@
             color: var(--accent);
         }
 
+        .performance-note {
+            color: var(--text-muted);
+            font-size: 13px;
+            margin: -8px 0 16px;
+        }
+
+        .performance-table {
+            min-width: 680px;
+        }
+
+        .performance-table td,
+        .performance-table th {
+            padding: 10px;
+        }
+
+        .metric-positive {
+            color: #86efac;
+            font-weight: 700;
+        }
+
+        .metric-negative {
+            color: #fca5a5;
+            font-weight: 700;
+        }
+
+        .trend-bars {
+            display: flex;
+            align-items: end;
+            gap: 5px;
+            height: 100px;
+            padding: 10px 0 0;
+        }
+
+        .trend-bar {
+            flex: 1;
+            min-width: 8px;
+            border-radius: 4px 4px 0 0;
+            background: var(--primary);
+            opacity: 0.85;
+            position: relative;
+        }
+
+        .trend-bar.negative {
+            background: var(--danger);
+            opacity: 0.75;
+        }
+
+        .trend-bar:hover {
+            opacity: 1;
+        }
+
         .status-box {
             background: rgba(16, 185, 129, 0.1);
             border: 1px solid rgba(16, 185, 129, 0.3);
@@ -614,6 +665,52 @@
                 <div class="stat-label">Critical Waiting</div>
                 <div class="stat-value" id="critical" style="color: var(--danger);">0</div>
             </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>Agent Performance</h2>
+        <p id="performance-note" class="performance-note">Loading training metrics...</p>
+        <div class="stats-grid">
+            <div class="stat-box">
+                <div class="stat-label">Training Episodes</div>
+                <div class="stat-value" id="perf-episodes">-</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">Average Reward</div>
+                <div class="stat-value" id="perf-avg-reward">-</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">Best Reward</div>
+                <div class="stat-value" id="perf-best-reward">-</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">Average TD Loss</div>
+                <div class="stat-value" id="perf-loss">-</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">Latest Epsilon</div>
+                <div class="stat-value" id="perf-epsilon">-</div>
+            </div>
+        </div>
+        <h3>Recent Reward Trend</h3>
+        <div id="performance-trend" class="trend-bars" aria-label="Recent training reward trend"></div>
+        <div class="table-scroll">
+            <table class="performance-table">
+                <thead>
+                    <tr>
+                        <th>Task</th>
+                        <th>Episodes</th>
+                        <th>Avg Reward</th>
+                        <th>Best</th>
+                        <th>Last</th>
+                        <th>Avg Loss</th>
+                    </tr>
+                </thead>
+                <tbody id="performance-body">
+                    <tr><td colspan="6" style="text-align: center; color: var(--text-muted);">Loading...</td></tr>
+                </tbody>
+            </table>
         </div>
     </div>
 
@@ -1179,6 +1276,79 @@ function renderRewardGraph() {
     text.innerText = `Latest Reward: ${latest.toFixed(3)} | Avg: ${avg.toFixed(3)}`;
 }
 
+function performanceNumber(value, digits = 3) {
+    const number = Number(value);
+    return Number.isFinite(number) ? number.toFixed(digits) : "-";
+}
+
+function performanceClass(value) {
+    return Number(value) >= 0 ? "metric-positive" : "metric-negative";
+}
+
+function renderPerformance(data) {
+    const note = document.getElementById("performance-note");
+    if (!data?.available) {
+        note.innerText = data?.message || "Training metrics are not available yet.";
+        document.getElementById("performance-body").innerHTML =
+            '<tr><td colspan="6" style="text-align: center; color: var(--text-muted);">No training data available</td></tr>';
+        return;
+    }
+
+    note.innerText = `${data.message} ${data.episodes} episodes measured.`;
+    const overall = data.overall || {};
+    document.getElementById("perf-episodes").innerText = data.episodes;
+    document.getElementById("perf-avg-reward").innerText = performanceNumber(overall.avg_reward);
+    document.getElementById("perf-avg-reward").className = `stat-value ${performanceClass(overall.avg_reward)}`;
+    document.getElementById("perf-best-reward").innerText = performanceNumber(overall.best_reward);
+    document.getElementById("perf-best-reward").className = `stat-value ${performanceClass(overall.best_reward)}`;
+    document.getElementById("perf-loss").innerText = performanceNumber(overall.avg_loss, 4);
+    document.getElementById("perf-epsilon").innerText = performanceNumber(overall.latest_epsilon, 3);
+
+    const rows = data.by_task || [];
+    document.getElementById("performance-body").innerHTML = rows.length
+        ? rows.map(row => `
+            <tr>
+                <td>${escapeHtml(row.task_id)}</td>
+                <td>${row.episodes}</td>
+                <td class="${performanceClass(row.avg_reward)}">${performanceNumber(row.avg_reward)}</td>
+                <td class="${performanceClass(row.best_reward)}">${performanceNumber(row.best_reward)}</td>
+                <td class="${performanceClass(row.last_reward)}">${performanceNumber(row.last_reward)}</td>
+                <td>${performanceNumber(row.avg_loss, 4)}</td>
+            </tr>
+        `).join("")
+        : '<tr><td colspan="6" style="text-align: center; color: var(--text-muted);">No task metrics available</td></tr>';
+
+    const recent = data.recent || [];
+    const maxMagnitude = Math.max(1, ...recent.map(row => Math.abs(Number(row.total_reward) || 0)));
+    document.getElementById("performance-trend").innerHTML = recent.length
+        ? recent.map(row => {
+            const reward = Number(row.total_reward) || 0;
+            const height = Math.max(8, Math.round(Math.abs(reward) / maxMagnitude * 82));
+            const barClass = reward < 0 ? "trend-bar negative" : "trend-bar";
+            return `<div class="${barClass}" style="height: ${height}px" title="Episode ${row.episode}: ${reward.toFixed(3)}"></div>`;
+        }).join("")
+        : '<span style="color: var(--text-muted);">No recent episodes</span>';
+}
+
+function escapeHtml(value) {
+    return String(value ?? "").replace(/[&<>"']/g, character => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#039;",
+    }[character]));
+}
+
+async function loadPerformance() {
+    try {
+        const response = await api("/api/performance");
+        renderPerformance(response.data || response);
+    } catch (error) {
+        renderPerformance({ available: false, message: `Could not load performance: ${error.message}` });
+    }
+}
+
 function pushTimelineEntry(action, obs, reward) {
     if (!obs) return;
     const entry = {
@@ -1581,6 +1751,7 @@ document.getElementById("doctor").addEventListener("change", renderActionWarning
 
 renderTimeline();
 renderActionWarnings();
+loadPerformance();
 </script>
 
 </body>

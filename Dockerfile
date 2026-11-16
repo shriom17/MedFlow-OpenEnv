@@ -13,6 +13,7 @@ RUN pip install --no-cache-dir --retries 5 --use-deprecated=legacy-resolver -r r
 
 COPY app ./app
 COPY templates ./templates
+COPY outputs ./outputs
 COPY openenv.yaml .
 
 EXPOSE 7860
