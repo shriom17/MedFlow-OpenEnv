@@ -113,6 +113,62 @@
             color: var(--text-primary);
         }
 
+        .section-heading {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 8px;
+        }
+
+        .section-heading h2 {
+            margin-bottom: 0;
+        }
+
+        .section-description {
+            color: var(--text-muted);
+            font-size: 13px;
+            line-height: 1.5;
+            margin-bottom: 16px;
+        }
+
+        .mode-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            border-radius: 999px;
+            padding: 5px 10px;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.6px;
+            text-transform: uppercase;
+        }
+
+        .mode-badge.live {
+            color: #bbf7d0;
+            background: rgba(16, 185, 129, 0.16);
+            border: 1px solid rgba(16, 185, 129, 0.4);
+        }
+
+        .mode-badge.history {
+            color: #bfdbfe;
+            background: rgba(59, 130, 246, 0.16);
+            border: 1px solid rgba(59, 130, 246, 0.4);
+        }
+
+        .mode-badge::before {
+            content: "";
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: currentColor;
+        }
+
+        .mode-badge.live::before {
+            box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.12);
+        }
+
         .task-buttons {
             display: flex;
             gap: 12px;
@@ -647,7 +703,11 @@
 
     <!-- STATS -->
     <div class="card">
-        <h2>Current Status</h2>
+        <div class="section-heading">
+            <h2>Live Simulation</h2>
+            <span class="mode-badge live">Realtime</span>
+        </div>
+        <p class="section-description">These values change whenever you run a manual step or ask the AI agent to act.</p>
         <div class="stats-grid">
             <div class="stat-box">
                 <div class="stat-label">Queue Length</div>
@@ -669,11 +729,15 @@
     </div>
 
     <div class="card">
-        <h2>Agent Performance</h2>
+        <div class="section-heading">
+            <h2>Agent Training History</h2>
+            <span class="mode-badge history">Saved Results</span>
+        </div>
+        <p class="section-description">This is how the trained policy performed across previous training episodes. It is not a live training counter.</p>
         <p id="performance-note" class="performance-note">Loading training metrics...</p>
         <div class="stats-grid">
             <div class="stat-box">
-                <div class="stat-label">Training Episodes</div>
+                <div class="stat-label">Episodes Trained</div>
                 <div class="stat-value" id="perf-episodes">-</div>
             </div>
             <div class="stat-box">
@@ -716,7 +780,11 @@
 
     <div class="grid">
         <div class="card">
-            <h2>Simulation Metrics</h2>
+            <div class="section-heading">
+                <h2>Current Episode</h2>
+                <span class="mode-badge live">Live</span>
+            </div>
+            <p class="section-description">Performance of the episode currently running in the hospital environment.</p>
             <div id="episode-status" class="summary-pill">Running</div>
             <div class="episode-summary-grid">
                 <div class="stat-box">
